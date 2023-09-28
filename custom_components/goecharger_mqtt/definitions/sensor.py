@@ -40,6 +40,7 @@ class GoEChargerSensorEntityDescription(
     """Sensor entity description for go-eCharger."""
 
     domain: str = "sensor"
+    decimals: int = 0
 
 
 def extract_charging_duration(value, attribute) -> int | None:
@@ -101,6 +102,9 @@ def transform_code(value, mapping_table) -> str:
     except KeyError:
         return "Definition missing for code %s" % value
 
+def roundDecimals (value, decimals) -> float:
+    return round(value, decimals)
+
 
 VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = ( 
     GoEChargerSensorEntityDescription(
@@ -116,7 +120,7 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     ),
     GoEChargerSensorEntityDescription(
         key="batteryPower",
-        name="Current power drawn from battery",
+        name="Battery charging power",
         entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.POWER,
         native_unit_of_measurement=POWER_WATT,
@@ -127,7 +131,9 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     ),
     GoEChargerSensorEntityDescription(
         key="batteryVoltage",
-        name="Voltage of energy drawn from battery",
+        name="Battery charging voltage",
+        state=roundDecimals,
+        decimals=3,
         entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=ELECTRIC_POTENTIAL_VOLT,
@@ -138,7 +144,9 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     ),
     GoEChargerSensorEntityDescription(
         key="batteryCurrent",
-        name="Current of energy drawn from battery",
+        name="Battery charging current",
+        state=roundDecimals,
+        decimals=2,
         entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
@@ -149,11 +157,11 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     ),
     GoEChargerSensorEntityDescription(
         key="batterySOC",
-        name="State of charge (%% of Battery)",
+        name="State of charge (% of Battery)",
         entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.BATTERY,
-        native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
-        state_class=PERCENTAGE,
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=STATE_CLASS_MEASUREMENT,
         entity_registry_enabled_default=True,
         disabled=False,
         isVictron=True,
