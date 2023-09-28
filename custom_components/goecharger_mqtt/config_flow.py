@@ -11,7 +11,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 import voluptuous as vol
 
-from .const import CONF_SERIAL_NUMBER, CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX, DOMAIN
+from .const import CONF_SERIAL_NUMBER, CONF_GOE_TOPIC_PREFIX, DEFAULT_GOE_TOPIC_PREFIX, DOMAIN
 
 try:
     # < HA 2022.8.0
@@ -27,7 +27,7 @@ DEFAULT_NAME = "go-eCharger"
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_SERIAL_NUMBER): vol.All(cv.string, vol.Length(min=6, max=6)),
-        vol.Required(CONF_TOPIC_PREFIX, default=DEFAULT_TOPIC_PREFIX): cv.string,
+        vol.Required(CONF_GOE_TOPIC_PREFIX, default=DEFAULT_GOE_TOPIC_PREFIX): cv.string,
     }
 )
 
@@ -54,7 +54,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     Data has the keys from STEP_USER_DATA_SCHEMA with values provided by the user.
     """
     serial_number = data[CONF_SERIAL_NUMBER]
-    hub = PlaceholderHub(data[CONF_TOPIC_PREFIX], serial_number)
+    hub = PlaceholderHub(data[CONF_GOE_TOPIC_PREFIX], serial_number)
 
     if not await hub.validate_device_topic():
         raise CannotConnect
@@ -105,7 +105,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 title=name,
                 data={
                     CONF_SERIAL_NUMBER: self._serial_number,
-                    CONF_TOPIC_PREFIX: self._topic_prefix,
+                    CONF_GOE_TOPIC_PREFIX: self._topic_prefix,
                 },
             )
 

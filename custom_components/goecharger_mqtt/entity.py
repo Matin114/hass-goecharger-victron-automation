@@ -5,10 +5,11 @@ from homeassistant.util import slugify
 
 from .const import (
     CONF_SERIAL_NUMBER,
-    CONF_TOPIC_PREFIX,
+    CONF_GOE_TOPIC_PREFIX,
     DEVICE_INFO_MANUFACTURER,
     DEVICE_INFO_MODEL,
     DOMAIN,
+    DEFAULT_VICTRON_TOPIC_PREFIX,
 )
 from .definitions import GoEChargerEntityDescription
 
@@ -22,10 +23,14 @@ class GoEChargerEntity(Entity):
         description: GoEChargerEntityDescription,
     ) -> None:
         """Initialize the sensor."""
-        topic_prefix = config_entry.data[CONF_TOPIC_PREFIX]
         serial_number = config_entry.data[CONF_SERIAL_NUMBER]
 
-        self._topic = f"{topic_prefix}/{serial_number}/{description.key}"
+        if description.isVictron:            
+            topic_prefix = DEFAULT_VICTRON_TOPIC_PREFIX
+            self._topic = f"{topic_prefix}/{description.key}"
+        else:
+            topic_prefix = config_entry.data[CONF_GOE_TOPIC_PREFIX]
+            self._topic = f"{topic_prefix}/{serial_number}/{description.key}"
 
         slug = slugify(self._topic.replace("/", "_"))
         self.entity_id = f"{description.domain}.{slug}"

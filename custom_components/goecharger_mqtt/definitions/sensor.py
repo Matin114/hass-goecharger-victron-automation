@@ -24,6 +24,7 @@ from homeassistant.const import (
     TEMP_CELSIUS,
     TIME_MILLISECONDS,
     TIME_SECONDS,
+    PERCENTAGE,
 )
 from homeassistant.helpers.entity import EntityCategory
 
@@ -101,7 +102,65 @@ def transform_code(value, mapping_table) -> str:
         return "Definition missing for code %s" % value
 
 
-SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
+VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
+    GoEChargerSensorEntityDescription(
+        key="globalGrid",
+        name="Current global power usage",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=POWER_WATT,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="batteryPower",
+        name="Current power drawn from battery",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=POWER_WATT,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="batteryVoltage",
+        name="Voltage of energy drawn from battery",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.VOLTAGE,
+        native_unit_of_measurement=ELECTRIC_POTENTIAL_VOLT,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="batteryCurrent",
+        name="Current of energy drawn from battery",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.CURRENT,
+        native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="batterySOC",
+        name="State of charge (%% of Battery)",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.BATTERY,
+        native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
+        state_class=PERCENTAGE,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    )
+)
+
+GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="+/result",
         name="Last set config key result",
