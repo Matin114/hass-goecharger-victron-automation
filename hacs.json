@@ -1,5 +1,5 @@
 {
-  "name": "go-eCharger integration for Home Assistant using the MQTT API",
+  "name": "go-eCharger integration (MQTT) with Victron PV surplus automation",
   "content_in_root": false,
   "render_readme": true,
   "homeassistant": "2022.12.0"

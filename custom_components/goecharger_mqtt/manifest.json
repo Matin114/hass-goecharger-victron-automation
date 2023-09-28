@@ -2,17 +2,19 @@
   "domain": "goecharger_mqtt",
   "name": "go-eCharger (MQTT)",
   "codeowners": [
+    "@Matin114",
     "@syssi"
   ],
   "config_flow": true,
   "dependencies": ["mqtt"],
-  "documentation": "https://github.com/syssi/homeassistant-goecharger-mqtt",
+  "documentation": "https://github.com/Matin114/hass-goecharger-victron-automation",
   "homekit": {},
   "iot_class": "local_push",
-  "issue_tracker": "https://github.com/syssi/homeassistant-goecharger-mqtt/issues",
+  "issue_tracker": "https://github.com/Matin114/hass-goecharger-victron-automation/issues",
   "mqtt": [
     "go-eCharger/+/var",
-    "/go-eCharger/+/var"
+    "/go-eCharger/+/var",
+    "/custom/#"
   ],
   "requirements": [],
   "ssdp": [],

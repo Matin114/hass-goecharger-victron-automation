@@ -7,9 +7,11 @@ ATTR_KEY = "key"
 ATTR_VALUE = "value"
 
 CONF_SERIAL_NUMBER = "serial_number"
-CONF_TOPIC_PREFIX = "topic_prefix"
+CONF_GOE_TOPIC_PREFIX = "topic_prefix"
 
-DEFAULT_TOPIC_PREFIX = "/go-eCharger"
+DEFAULT_GOE_TOPIC_PREFIX = "/go-eCharger"
+
+DEFAULT_VICTRON_TOPIC_PREFIX = "/custom"
 
 DEVICE_INFO_MANUFACTURER = "go-e"
 DEVICE_INFO_MODEL = "go-eCharger HOME"

@@ -6,7 +6,7 @@ from homeassistant.components import mqtt
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import callback
 
-from .definitions.sensor import SENSORS, GoEChargerSensorEntityDescription
+from .definitions.sensor import GOE_SENSORS, VICTRON_SENSORS, GoEChargerSensorEntityDescription
 from .entity import GoEChargerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ async def async_setup_entry(
 
     async_add_entities(
         GoEChargerSensor(config_entry, description)
-        for description in SENSORS
+        for description in GOE_SENSORS+VICTRON_SENSORS
         if not description.disabled
     )
 

@@ -14,7 +14,7 @@ from .const import (
     ATTR_KEY,
     ATTR_SERIAL_NUMBER,
     ATTR_VALUE,
-    DEFAULT_TOPIC_PREFIX,
+    DEFAULT_GOE_TOPIC_PREFIX,
     DOMAIN,
 )
 
@@ -61,7 +61,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         serial_number = call.data.get("serial_number")
         key = call.data.get("key")
         # @FIXME: Retrieve the topic_prefix from config_entry
-        topic = f"{DEFAULT_TOPIC_PREFIX}/{serial_number}/{key}/set"
+        topic = f"{DEFAULT_GOE_TOPIC_PREFIX}/{serial_number}/{key}/set"
         value = call.data.get("value")
 
         if not value.isnumeric():
