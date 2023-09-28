@@ -102,7 +102,7 @@ def transform_code(value, mapping_table) -> str:
         return "Definition missing for code %s" % value
 
 
-VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
+VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = ( 
     GoEChargerSensorEntityDescription(
         key="globalGrid",
         name="Current global power usage",
