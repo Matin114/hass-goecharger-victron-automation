@@ -40,7 +40,6 @@ class GoEChargerSensorEntityDescription(
     """Sensor entity description for go-eCharger."""
 
     domain: str = "sensor"
-    decimals: int = 0
 
 
 def extract_charging_duration(value, attribute) -> int | None:
@@ -102,8 +101,13 @@ def transform_code(value, mapping_table) -> str:
     except KeyError:
         return "Definition missing for code %s" % value
 
-def roundDecimals (value, decimals) -> float:
-    return round(value, decimals)
+def roundTwoDecimals(value, unused) -> float:
+    """Round to two decimals"""
+    return round(float(value), 2)
+
+def roundThreeDecimals(value, unused) -> float:
+    """Round to three decimals"""
+    return round(float(value), 3)
 
 
 VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = ( 
@@ -132,8 +136,7 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="batteryVoltage",
         name="Battery charging voltage",
-        state=roundDecimals,
-        decimals=3,
+        state=roundThreeDecimals,
         entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.VOLTAGE,
         native_unit_of_measurement=ELECTRIC_POTENTIAL_VOLT,
@@ -145,8 +148,7 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="batteryCurrent",
         name="Battery charging current",
-        state=roundDecimals,
-        decimals=2,
+        state=roundTwoDecimals,
         entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
