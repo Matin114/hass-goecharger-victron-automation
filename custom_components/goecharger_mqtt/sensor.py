@@ -93,7 +93,7 @@ class GoEChargerSensor(GoEChargerEntity, SensorEntity):
                     self._attr_native_value = None
                 else:
                     self._attr_native_value = message.payload
-
+    
             self.async_write_ha_state()
 
         await mqtt.async_subscribe(self.hass, self._topic, message_received, 1)

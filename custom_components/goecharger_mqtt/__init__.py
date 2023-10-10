@@ -16,6 +16,11 @@ from .const import (
     ATTR_VALUE,
     DEFAULT_GOE_TOPIC_PREFIX,
     DOMAIN,
+    ATTR_VICTRON_GLOBAL_GRID,
+    ATTR_VICTRON_BATTERY_CURRENT,
+    ATTR_VICTRON_BATTERY_POWER,
+    ATTR_VICTRON_BATTERY_VOLTAGE,
+    ATTR_VICTRON_BATTERY_SOC,
 )
 
 PLATFORMS: list[str] = [
@@ -34,6 +39,15 @@ SERVICE_SCHEMA_SET_CONFIG_KEY = vol.Schema(
         vol.Required(ATTR_SERIAL_NUMBER): cv.string,
         vol.Required(ATTR_KEY): cv.string,
         vol.Required(ATTR_VALUE): cv.string,
+    }
+)
+SERVICE_SCHEMA_GOE_SURPLUS_CONTROLLER = vol.Schema(
+    {
+        vol.Required(ATTR_VICTRON_GLOBAL_GRID): cv.string,
+        vol.Required(ATTR_VICTRON_BATTERY_CURRENT): cv.string,
+        vol.Required(ATTR_VICTRON_BATTERY_POWER): cv.string,
+        vol.Required(ATTR_VICTRON_BATTERY_VOLTAGE): cv.string,
+        vol.Required(ATTR_VICTRON_BATTERY_SOC): cv.string,
     }
 )
 
@@ -73,12 +87,27 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
                 value = f'"{value}"'
 
         await mqtt.async_publish(hass, topic, value)
+    
+    @callback
+    async def goe_surplus_controller_service(call: ServiceCall) -> None:
+        globalGrid = call.data.get("globalGrid")
+        batteryPower = call.data.get("batteryPower")
+        batteryCurrent = call.data.get("batteryCurrent")
+        batteryVoltage = call.data.get("batteryVoltage")
+        batterySoc = call.data.get("batterySoc")
+        _LOGGER.warn(f"GlobalGrid:{globalGrid}\nBatteryPower:{batteryPower}\nBatteryCurrent:{batteryCurrent}\nBatteryVoltage:{batteryVoltage}\nBatterySOC:{batterySoc}")
 
     hass.services.async_register(
         DOMAIN,
         "set_config_key",
         set_config_key_service,
         schema=SERVICE_SCHEMA_SET_CONFIG_KEY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "goe_surplus_controller",
+        goe_surplus_controller_service,
+        schema=SERVICE_SCHEMA_GOE_SURPLUS_CONTROLLER,
     )
 
     return True
