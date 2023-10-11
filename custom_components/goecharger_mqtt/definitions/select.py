@@ -27,7 +27,7 @@ VICTRON_SELECTS: tuple[GoEChargerSelectEntityDescription, ...] = (
     GoEChargerSelectEntityDescription(
         key="chargePrio",
         name="Charge Priority",
-        legacy_options={CONST_VICTRON_CHARGE_PRIOS},
+        legacy_options=CONST_VICTRON_CHARGE_PRIOS,
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         entity_registry_enabled_default=True,
