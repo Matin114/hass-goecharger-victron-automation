@@ -1,0 +1,31 @@
+blueprint:
+  name: GOE surplus controller blueprint
+  description: A Blueprint for the automation needed for the surplus controller to work
+  domain: automation
+  author: Matin114
+  input:
+    triggerEntity:
+      name: Trigger Entity
+      description: when this entity updates, the automation is triggered
+      selector:
+        entity: 
+
+# If motion is detected within the delay,
+# we restart the script.
+mode: restart
+max_exceeded: silent
+
+trigger:
+  platform: state
+  entity_id: !input triggerEntity
+
+
+action:
+  - service: goecharger_mqtt.goe_surplus_controller
+    data:
+      globalGrid: "{{states('select.custom_chargePrio')}}"
+      globalGrid: "{{states('sensor.custom_globalGrid')}}"
+      batteryPower: "{{states('sensor.custom_batteryPower')}}"
+      batteryCurrent: "{{states('sensor.custom_batteryCurrent')}}"
+      batteryVoltage: "{{states('sensor.custom_batteryVoltage')}}"
+      batterySOC: "{{states('sensor.custom_batterySOC')}}"

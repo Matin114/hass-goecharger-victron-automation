@@ -4,10 +4,11 @@ import logging
 from homeassistant import config_entries, core
 from homeassistant.components import mqtt
 from homeassistant.components.select import SelectEntity
-from homeassistant.core import callback
+from homeassistant.core import callback, HomeAssistant
 
 from .definitions.select import GOE_SELECTS, VICTRON_SELECTS, GoEChargerSelectEntityDescription
 from .entity import GoEChargerEntity
+from .const import CONST_VICTRON_CHARGE_PRIOS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ async def async_setup_entry(
 ):
     """Config entry setup."""
     async_add_entities(
-        GoEChargerSelect(config_entry, description)
+        GoEChargerSelect(hass, config_entry, description)
         for description in GOE_SELECTS + VICTRON_SELECTS
         if not description.disabled
     )
@@ -28,24 +29,33 @@ async def async_setup_entry(
 class GoEChargerSelect(GoEChargerEntity, SelectEntity):
     """Representation of a go-eCharger switch that is updated via MQTT."""
 
+    hass: HomeAssistant
     entity_description: GoEChargerSelectEntityDescription
 
     def __init__(
         self,
+        hass: HomeAssistant,
         config_entry: config_entries.ConfigEntry,
         description: GoEChargerSelectEntityDescription,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(config_entry, description)
-
+        self.hass = hass
         self.entity_description = description
+
         self._attr_options = list(description.legacy_options.values())
         self._attr_current_option = None
+        # turn of wallbox when homeassistant restarts
+        if description.key == "chargePrio":
+            self._attr_current_option = CONST_VICTRON_CHARGE_PRIOS["0"]
+            self.hass.async_add_job(self.async_select_option, CONST_VICTRON_CHARGE_PRIOS["0"])
+
 
     @property
     def available(self):
         """Return True if entity is available."""
-        return self._attr_current_option is not None
+        # make victron selects always available
+        return self.entity_description.isVictron or self._attr_current_option is not None
 
     def key_from_option(self, option: str):
         """Return the option a given payload is assigned to."""
@@ -60,8 +70,11 @@ class GoEChargerSelect(GoEChargerEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         """Update the current value."""
+        setterTopic = f"{self._topic}"
+        if not self.entity_description.isVictron:
+            setterTopic += "/set"
         await mqtt.async_publish(
-            self.hass, f"{self._topic}/set", self.key_from_option(option)
+            self.hass, setterTopic, self.key_from_option(option)
         )
 
     async def async_added_to_hass(self):
