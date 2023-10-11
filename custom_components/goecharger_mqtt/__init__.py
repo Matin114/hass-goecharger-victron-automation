@@ -16,6 +16,7 @@ from .const import (
     ATTR_VALUE,
     DEFAULT_GOE_TOPIC_PREFIX,
     DOMAIN,
+    ATTR_VICTRON_CHARGE_PRIO,
     ATTR_VICTRON_GLOBAL_GRID,
     ATTR_VICTRON_BATTERY_CURRENT,
     ATTR_VICTRON_BATTERY_POWER,
@@ -43,6 +44,7 @@ SERVICE_SCHEMA_SET_CONFIG_KEY = vol.Schema(
 )
 SERVICE_SCHEMA_GOE_SURPLUS_CONTROLLER = vol.Schema(
     {
+        vol.Required(ATTR_VICTRON_CHARGE_PRIO): cv.string,
         vol.Required(ATTR_VICTRON_GLOBAL_GRID): cv.string,
         vol.Required(ATTR_VICTRON_BATTERY_CURRENT): cv.string,
         vol.Required(ATTR_VICTRON_BATTERY_POWER): cv.string,
@@ -90,6 +92,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     
     @callback
     async def goe_surplus_controller_service(call: ServiceCall) -> None:
+        chargePrio = call.data.get("chargePrio")
         globalGrid = call.data.get("globalGrid")
         batteryPower = call.data.get("batteryPower")
         batteryCurrent = call.data.get("batteryCurrent")

@@ -9,6 +9,8 @@ from homeassistant.helpers.entity import EntityCategory
 
 from . import GoEChargerEntityDescription
 
+from ..const import CONST_VICTRON_CHARGE_PRIOS
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -21,8 +23,20 @@ class GoEChargerSelectEntityDescription(
     legacy_options: dict[str, str] | None = None
     domain: str = "select"
 
+VICTRON_SELECTS: tuple[GoEChargerSelectEntityDescription, ...] = (
+    GoEChargerSelectEntityDescription(
+        key="chargePrio",
+        name="Charge Priority",
+        legacy_options={CONST_VICTRON_CHARGE_PRIOS},
+        entity_category=EntityCategory.CONFIG,
+        device_class=None,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    ),
+)
 
-SELECTS: tuple[GoEChargerSelectEntityDescription, ...] = (
+GOE_SELECTS: tuple[GoEChargerSelectEntityDescription, ...] = (
     GoEChargerSelectEntityDescription(
         key="lmo",
         name="Logic mode",

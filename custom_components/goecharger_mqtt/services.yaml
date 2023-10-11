@@ -93,6 +93,12 @@ goe_surplus_controller:
   name: GO-E Charger surplus controller
   description: This service calculates depending on the chargePriority a the power, the GO-E charger may use
   fields:
+    chargePrio:
+      name: Charge Priority
+      description: A Priority which decides if either car or home battery should be charged
+      required: true
+      selector:
+        text:
     globalGrid:
       name: Global Grid
       description: The current global consumed energy in W

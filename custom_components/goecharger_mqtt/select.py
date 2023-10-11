@@ -6,7 +6,7 @@ from homeassistant.components import mqtt
 from homeassistant.components.select import SelectEntity
 from homeassistant.core import callback
 
-from .definitions.select import SELECTS, GoEChargerSelectEntityDescription
+from .definitions.select import GOE_SELECTS, VICTRON_SELECTS, GoEChargerSelectEntityDescription
 from .entity import GoEChargerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ async def async_setup_entry(
     """Config entry setup."""
     async_add_entities(
         GoEChargerSelect(config_entry, description)
-        for description in SELECTS
+        for description in GOE_SELECTS + VICTRON_SELECTS
         if not description.disabled
     )
 
