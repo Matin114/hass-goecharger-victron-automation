@@ -118,18 +118,4 @@ GOE_SELECTS: tuple[GoEChargerSelectEntityDescription, ...] = (
         entity_registry_enabled_default=True,
         disabled=False,
     ),
-    GoEChargerSelectEntityDescription(
-        key="alw",
-        name="Allow charging of car",
-        legacy_options={
-            "0": "NO",
-            "1": "YES",
-        },
-        attribute="alw",
-        entity_category=EntityCategory.CONFIG,
-        device_class=None,
-        icon="mdi:check-circle-outline",
-        entity_registry_enabled_default=True,
-        disabled=False,
-    ),
 )

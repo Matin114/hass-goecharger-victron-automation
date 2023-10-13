@@ -1,10 +1,11 @@
 import logging
 from datetime import timedelta, datetime
+import pytz
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components import mqtt
 
-from const import CONF_GOE_TOPIC_PREFIX, CONF_SERIAL_NUMBER
+from .const import CONF_GOE_TOPIC_PREFIX, CONF_SERIAL_NUMBER, CONST_VICTRON_CHARGE_PRIOS, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 class GoESurplusService():
 
     hass: HomeAssistant
-    chargePrio: str
+    chargePrio: str = "-1"
     globalGrid: float # global used power
     batteryPower: float
     batteryCurrent: float
@@ -20,8 +21,10 @@ class GoESurplusService():
     batterySoc: float # battery chargelevel in %
     chargePower: float # current power the battery is charged with
     maxBatteryChargePower: float # maximal allowed power the battery may be charged with
-    usedPhases: int # 0-3 for every phase used for charging the car 
+    usedPhases: int = 0 # 0-3 for every phase used for charging the car 
     instantUpdatePower: bool = False # if chargePrio changes or some prios are selected the chargePower should change instantly
+
+    runtimeError: bool = False # if this is set the service call will be cancelled
 
     def __init__(
         self,
@@ -32,42 +35,47 @@ class GoESurplusService():
         self.hass = hass
         try:
             chargePrioSelect = hass.states.get('select.custom_chargeprio')
-            self.chargePrio = int(chargePrioSelect.state)
-
-            # if new prio was selected always instat update all fields
-            if chargePrioSelect.last_changed.date < datetime.datetime.now()-datetime.timedelta(seconds=5):
-                # TODO remove logger and adjust seconds=5
-                _LOGGER.warn(f"time prio was selected{chargePrioSelect.last_changed.date}\ntimeCodeWasReached{datetime.datetime.now()}")
-                self.instantUpdatePower = True
+            for key, description in CONST_VICTRON_CHARGE_PRIOS.items():
+                if chargePrioSelect.state == description:
+                    self.chargePrio = key
+                    break
+            if self.chargePrio == "-1":
+                self.chargePrio = "0"
+                _LOGGER.warn(f"Configured chargePrio is not know to the controller, but: {chargePrioSelect.state}\nCharger was turned off!")
             
-        except ValueError:
-            self.chargePrio = 0
-            _LOGGER.warn(f"Configured chargePrio is somehow not a number but: {chargePrioSelect.state}\nHandling just like charger was turned off!")
+            # if new prio was selected always instat update all fields
+            if chargePrioSelect.last_changed > datetime.now(pytz.UTC)-timedelta(seconds=1):
+                self.instantUpdatePower = True
 
-        
-        self.globalGrid = hass.states.get('sensor.custom_globalGrid')
-        self.batteryPower = hass.states.get('sensor.custom_batteryPower')
-        self.batteryCurrent = hass.states.get('sensor.custom_batteryCurrent')
-        self.batteryVoltage = hass.states.get('sensor.custom_batteryVoltage')
-        self.batterySoc = hass.states.get('sensor.custom_batterySOC')
-        self.carChargePower = hass.states.get('sensor.go_echarger_217953_nrg_12')
-        # TODO calculate maxBatteryChargePower here or in a own service
-        self.maxBatteryChargePower = hass.states.get('sensor.custom_maxBatteryChargePower')
-        
-        # regoster everey used phase
-        self.usedPhases += 1 if hass.states.get('sensor.go_echarger_217953_nrg_5') > 0 else 0
-        self.usedPhases += 1 if hass.states.get('sensor.go_echarger_217953_nrg_6') > 0 else 0
-        self.usedPhases += 1 if hass.states.get('sensor.go_echarger_217953_nrg_7') > 0 else 0
+            self.globalGrid = float(hass.states.get('sensor.custom_globalGrid').state)
+            self.batteryPower = float(hass.states.get('sensor.custom_batteryPower').state)
+            self.batteryCurrent = float(hass.states.get('sensor.custom_batteryCurrent').state)
+            self.batteryVoltage = float(hass.states.get('sensor.custom_batteryVoltage').state)
+            self.batterySoc = float(hass.states.get('sensor.custom_batterySOC').state)
+            self.carChargePower = float(hass.states.get('sensor.go_echarger_217953_nrg_12').state)
+            # TODO calculate maxBatteryChargePower here or in a own service
+            self.maxBatteryChargePower = hass.states.get('sensor.custom_maxBatteryChargePower').state
+            
+            # regoster everey used phase
+            self.usedPhases += 1 if float(hass.states.get('sensor.go_echarger_217953_nrg_5').state) > 0 else 0
+            self.usedPhases += 1 if float(hass.states.get('sensor.go_echarger_217953_nrg_6').state) > 0 else 0
+            self.usedPhases += 1 if float(hass.states.get('sensor.go_echarger_217953_nrg_7').state) > 0 else 0
+        except ValueError:
+            self.runtimeError = True
+            _LOGGER.info(f"One of the needed fields was None! Canceling charger calculations!")
     
     def executeService(self):
 
+        if self.runtimeError:
+            return
+        
         targetCarChargePower = self.calcTargetCarChargePower()
 
         # check if charging is allowed
         if targetCarChargePower < 1380:
-            alwNewVal = 0
+            frcNewVal = 1
         else:
-            alwNewVal = 1
+            frcNewVal = 2
         
         # decide between single phase and multiphase
         if targetCarChargePower <= 4140:
@@ -84,17 +92,18 @@ class GoESurplusService():
 
         # TODO replace the mqtt calls with the actual update of the sensor e.g.:
         # self.hass.async_add_job(GoEChargerSelect.async_select_option, "OFF")
-        serialNumber = self.hass.config_entry.data[CONF_SERIAL_NUMBER]
-        goeTopicPrefix = f"{self.hass.config_entry.data[CONF_GOE_TOPIC_PREFIX]}/{serialNumber}"
+        configEntry = self.hass.config_entries.async_entries(DOMAIN)[0]
+        serialNumber = configEntry.data[CONF_SERIAL_NUMBER]
+        goeTopicPrefix = f"{configEntry.data[CONF_GOE_TOPIC_PREFIX]}/{serialNumber}"
         
-        # set new alw if needed
-        if (alwNewVal != self.hass.states.get(f"number.go_echarger_{serialNumber}_alw")):
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{goeTopicPrefix}/alw/set", alwNewVal)
-        
-        # set new alw if needed
+        # set new amp if needed
         if (ampNewVal != self.hass.states.get(f"number.go_echarger_{serialNumber}_amp")):
             self.hass.async_add_job(mqtt.async_publish, self.hass, f"{goeTopicPrefix}/amp/set", ampNewVal)
 
+        # set new frc if needed
+        if (frcNewVal != self.hass.states.get(f"number.go_echarger_{serialNumber}_frc")):
+            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{goeTopicPrefix}/frc/set", frcNewVal)
+        
         # set new psm if needed
         if (psmNewVal != self.hass.states.get(f"number.go_echarger_{serialNumber}_psm")):
             self.hass.async_add_job(mqtt.async_publish, self.hass, f"{goeTopicPrefix}/psm/set", psmNewVal)
@@ -126,7 +135,10 @@ class GoESurplusService():
             # AND PV produced energy is bigger than 1680 (1380 + 300)
             # SET targetCarChargePower to the minimal of 1380
             if 300 < targetCarChargePower < 1380 and 1680 < self.batteryPower - self.globalGrid:
-                targetCarChargePower = 1380
+                targetCarChargePower = 1380   
+        elif self.chargePrio == "5": # use power from the grid to fast charge the car
+            targetCarChargePower = availablePower + 27000
+            self.instantUpdatePower = True
         else: # either OFF or unknown chargePrio
             targetCarChargePower = 0
 
@@ -137,7 +149,7 @@ class GoESurplusService():
         # avoid a negativ targetCarChargePower
         return targetCarChargePower if targetCarChargePower > 0 else 0
 
-    def calccalcAmpNewVal(self, targetCarChargePower, psm):
+    def calcAmpNewVal(self, targetCarChargePower, psm):
         """calculate charging AMPs"""
         if psm == 1:
             ampNewVal = targetCarChargePower/230
