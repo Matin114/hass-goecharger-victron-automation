@@ -10,6 +10,8 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 import voluptuous as vol
 
+from .goe_surplus_service import GoESurplusService
+
 from .const import (
     ATTR_KEY,
     ATTR_SERIAL_NUMBER,
@@ -42,23 +44,15 @@ SERVICE_SCHEMA_SET_CONFIG_KEY = vol.Schema(
         vol.Required(ATTR_VALUE): cv.string,
     }
 )
-SERVICE_SCHEMA_GOE_SURPLUS_CONTROLLER = vol.Schema(
-    {
-        vol.Required(ATTR_VICTRON_CHARGE_PRIO): cv.string,
-        vol.Required(ATTR_VICTRON_GLOBAL_GRID): cv.string,
-        vol.Required(ATTR_VICTRON_BATTERY_CURRENT): cv.string,
-        vol.Required(ATTR_VICTRON_BATTERY_POWER): cv.string,
-        vol.Required(ATTR_VICTRON_BATTERY_VOLTAGE): cv.string,
-        vol.Required(ATTR_VICTRON_BATTERY_SOC): cv.string,
-    }
-)
+
+# no configuration needed/allowed
+SERVICE_SCHEMA_GOE_SURPLUS_CONTROLLER = vol.Schema({})
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up go-eCharger (MQTT) from a config entry."""
     hass.data.setdefault(DOMAIN, {})
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
     return True
 
 
@@ -92,13 +86,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     
     @callback
     async def goe_surplus_controller_service(call: ServiceCall) -> None:
-        chargePrio = call.data.get("chargePrio")
-        globalGrid = call.data.get("globalGrid")
-        batteryPower = call.data.get("batteryPower")
-        batteryCurrent = call.data.get("batteryCurrent")
-        batteryVoltage = call.data.get("batteryVoltage")
-        batterySoc = call.data.get("batterySoc")
-        _LOGGER.warn(f"GlobalGrid:{globalGrid}\nBatteryPower:{batteryPower}\nBatteryCurrent:{batteryCurrent}\nBatteryVoltage:{batteryVoltage}\nBatterySOC:{batterySoc}")
+        goeSurplusService = GoESurplusService(
+            hass=hass
+        ) 
+        goeSurplusService.executeService()
 
     hass.services.async_register(
         DOMAIN,
