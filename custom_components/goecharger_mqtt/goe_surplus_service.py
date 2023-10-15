@@ -121,8 +121,7 @@ class GoESurplusService():
             _LOGGER.warn(f"Configured chargePrio is not know to the controller, but: {chargePrioSelect.state}\nCharger was turned off!")
         
         # if new prio was selected always instat update all fields
-        if chargePrioSelect.last_changed > datetime.now(pytz.UTC)-timedelta(seconds=1):
-            self.instantUpdatePower = True
+        self.instantUpdatePower = True if chargePrioSelect.last_changed > datetime.now(pytz.UTC)-timedelta(seconds=1) else False
 
         return True
 
@@ -162,10 +161,13 @@ class GoESurplusService():
         psmUpdateTimer = 0
         if not self.instantUpdatePower:
             frcUpdateTimer = self.updateValueTimer("frc", self.oldFrcVal, frcNewVal, 30)
-            psmUpdateTimer = self.updateValueTimer("psm", self.oldPsmVal, psmNewVal, 30)
-
             self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/frcUpdateTimer", frcUpdateTimer)
+
+            psmUpdateTimer = self.updateValueTimer("psm", self.oldPsmVal, psmNewVal, 30)
             self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/psmUpdateTimer", psmUpdateTimer)
+            # use old psm value if not changed for correct calculation of AMPs
+            psmNewVal = self.oldPsmVal if psmUpdateTimer != 0 else psmNewVal
+    
 
         ampNewVal = self.calcAmpNewVal(targetCarChargePower, psmNewVal)
 
@@ -218,9 +220,11 @@ class GoESurplusService():
             targetCarChargePower = 0
             self.instantUpdatePower = True
 
-        # smoothen out targetCarChargePower for it not to flicker around
-        if not self.instantUpdatePower and not self.oldTargetCarChargePower == 0 and targetCarChargePower > 0:
-            targetCarChargePower = (targetCarChargePower+4*self.oldTargetCarChargePower)/5
+
+        # smoothen out targetCarChargePower for it not to flicker around, but only if difference to old targetCarChargePower is greater than 200
+        if not self.instantUpdatePower and not self.oldTargetCarChargePower == 0 and targetCarChargePower > 0 and abs(targetCarChargePower-self.oldTargetCarChargePower) > 200:
+            targetCarChargePower = round((targetCarChargePower+6*self.oldTargetCarChargePower)/7)
+
             
         # avoid feeding the grid with more power than is being charged
         if self.chargePrio > 0:
