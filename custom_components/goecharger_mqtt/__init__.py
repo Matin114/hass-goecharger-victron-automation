@@ -48,10 +48,10 @@ SERVICE_SCHEMA_SET_CONFIG_KEY = vol.Schema(
 # no configuration needed/allowed
 SERVICE_SCHEMA_GOE_SURPLUS_CONTROLLER = vol.Schema({})
 
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up go-eCharger (MQTT) from a config entry."""
     hass.data.setdefault(DOMAIN, {})
+    hass.data[GoESurplusService.__name__] = GoESurplusService(hass) 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -86,10 +86,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     
     @callback
     async def goe_surplus_controller_service(call: ServiceCall) -> None:
-        goeSurplusService = GoESurplusService(
-            hass=hass
-        ) 
-        goeSurplusService.executeService()
+        surplusController = hass.data[GoESurplusService.__name__]
+        if isinstance(surplusController, GoESurplusService):
+            surplusController.executeService()
 
     hass.services.async_register(
         DOMAIN,

@@ -11,6 +11,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class GoESurplusService():
+    __name__ = "GoESurplusService"
 
     hass: HomeAssistant
     chargePrio: str = "-1"
@@ -24,8 +25,6 @@ class GoESurplusService():
     usedPhases: int = 0 # 0-3 for every phase used for charging the car 
     instantUpdatePower: bool = False # if chargePrio changes or some prios are selected the chargePower should change instantly
 
-    runtimeError: bool = False # if this is set the service call will be cancelled
-
     def __init__(
         self,
         hass : HomeAssistant,
@@ -33,40 +32,68 @@ class GoESurplusService():
         """Initialize the Service."""
         
         self.hass = hass
-        try:
-            chargePrioSelect = hass.states.get('select.custom_chargeprio')
-            for key, description in CONST_VICTRON_CHARGE_PRIOS.items():
-                if chargePrioSelect.state == description:
-                    self.chargePrio = key
-                    break
-            if self.chargePrio == "-1":
-                self.chargePrio = "0"
-                _LOGGER.warn(f"Configured chargePrio is not know to the controller, but: {chargePrioSelect.state}\nCharger was turned off!")
-            
-            # if new prio was selected always instat update all fields
-            if chargePrioSelect.last_changed > datetime.now(pytz.UTC)-timedelta(seconds=1):
-                self.instantUpdatePower = True
-
-            self.globalGrid = float(hass.states.get('sensor.custom_globalGrid').state)
-            self.batteryPower = float(hass.states.get('sensor.custom_batteryPower').state)
-            self.batteryCurrent = float(hass.states.get('sensor.custom_batteryCurrent').state)
-            self.batteryVoltage = float(hass.states.get('sensor.custom_batteryVoltage').state)
-            self.batterySoc = float(hass.states.get('sensor.custom_batterySOC').state)
-            self.carChargePower = float(hass.states.get('sensor.go_echarger_217953_nrg_12').state)
-            # TODO calculate maxBatteryChargePower here or in a own service
-            self.maxBatteryChargePower = hass.states.get('sensor.custom_maxBatteryChargePower').state
-            
-            # regoster everey used phase
-            self.usedPhases += 1 if float(hass.states.get('sensor.go_echarger_217953_nrg_5').state) > 0 else 0
-            self.usedPhases += 1 if float(hass.states.get('sensor.go_echarger_217953_nrg_6').state) > 0 else 0
-            self.usedPhases += 1 if float(hass.states.get('sensor.go_echarger_217953_nrg_7').state) > 0 else 0
-        except ValueError:
-            self.runtimeError = True
-            _LOGGER.info(f"One of the needed fields was None! Canceling charger calculations!")
     
+    # returns True if data initialization was successful, otherwise False
+    def initData(self) -> bool:
+        # key=variableName, value=hass sensor name
+        sensorData = {
+            "globalGrid" : "sensor.custom_globalGrid",
+            "batteryPower" : "sensor.custom_globalGrid",
+            "batteryCurrent" : "sensor.custom_batteryCurrent",
+            "batteryVoltage" : "sensor.custom_batteryVoltage",
+            "batterySoc" : "sensor.custom_batterySOC",
+            "carChargePower" : "sensor.go_echarger_217953_nrg_12",
+            "maxBatteryChargePower" : "sensor.custom_globalGrid",
+            "powerPhaseOne" : "sensor.go_echarger_217953_nrg_5",
+            "powerPhaseTwo" : "sensor.go_echarger_217953_nrg_6",
+            "powerPhaseThree" : "sensor.go_echarger_217953_nrg_7",
+        }
+        unavailableSensorData = []
+
+        # check if all sensor data is available
+        for varName, sensor in sensorData:
+            try:
+                sensorData[varName] = float(self.hass.states.get(sensor).state)
+            except ValueError:
+                unavailableSensorData.append(sensor)
+        
+        if unavailableSensorData:
+            _LOGGER.info(f"Following fields couldn't be retrieved {unavailableSensorData}!\nCanceling charger calculations!")
+            return False
+
+
+        chargePrioSelect = self.hass.states.get('select.custom_chargeprio')
+        for key, description in CONST_VICTRON_CHARGE_PRIOS.items():
+            if chargePrioSelect.state == description:
+                self.chargePrio = key
+                break
+        if self.chargePrio == "-1":
+            self.chargePrio = "0"
+            _LOGGER.warn(f"Configured chargePrio is not know to the controller, but: {chargePrioSelect.state}\nCharger was turned off!")
+        
+        # if new prio was selected always instat update all fields
+        if chargePrioSelect.last_changed > datetime.now(pytz.UTC)-timedelta(seconds=1):
+            self.instantUpdatePower = True
+
+        self.globalGrid = sensorData["globalGrid"]
+        self.batteryPower = sensorData["batteryPower"]
+        self.batteryCurrent = sensorData["batteryCurrent"]
+        self.batteryVoltage = sensorData["batteryVoltage"]
+        self.batterySoc = sensorData["batterySoc"]
+        self.carChargePower = sensorData["carChargePower"]
+        # TODO calculate maxBatteryChargePower here or in a own service
+        self.maxBatteryChargePower = sensorData["maxBatteryChargePower"]
+        
+        # regoster everey used phase
+        self.usedPhases += 1 if sensorData["powerPhaseOne"] > 0 else 0
+        self.usedPhases += 1 if sensorData["powerPhaseTwo"] > 0 else 0
+        self.usedPhases += 1 if sensorData["powerPhaseThree"] > 0 else 0
+
+        return True
+
     def executeService(self):
 
-        if self.runtimeError:
+        if not self.initData():
             return
         
         targetCarChargePower = self.calcTargetCarChargePower()
@@ -79,9 +106,10 @@ class GoESurplusService():
         
         # decide between single phase and multiphase
         if targetCarChargePower <= 4140:
-            # if charging via two phases check with 2760 (2*230V*6A) 
+            # if charging via two phases check with 3680 (2*230V*8A) 
             # to avoid often switching between single and multiphase charging
-            if self.usedPhases == 2 and targetCarChargePower >= 2760:
+            # -> the lowest possible power would be 2760W, but I used 3680W to be able to make smaller power changes in a lower power region
+            if self.usedPhases == 2 and targetCarChargePower >= 3680:
                 psmNewVal = 2
             else:
                 psmNewVal = 1
@@ -141,6 +169,7 @@ class GoESurplusService():
             self.instantUpdatePower = True
         else: # either OFF or unknown chargePrio
             targetCarChargePower = 0
+            self.instantUpdatePower = True
 
         # TODO funky aufrundung um netzeinspeisung zu verhindern
 
@@ -172,7 +201,7 @@ class GoESurplusService():
 
         if ampNewVal < 6:
             ampNewVal = 6
-        elif (psm == 1 or self.usedPhases == 2) and ampNewVal > 18:
+        elif psm == 1 and ampNewVal > 18:
             # single and two phase charging allows max 18A
             ampNewVal = 18
         elif ampNewVal > 32:
