@@ -189,6 +189,30 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         entity_registry_enabled_default=True,
         disabled=False,
         isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="frcUpdateTimer",
+        name="Force state will change in:",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=TIME_SECONDS,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        icon="mdi:swap-horizontal",
+        disabled=False,
+        isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="psmUpdateTimer",
+        name="Phase switch mode will change in:",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=TIME_SECONDS,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        icon="mdi:swap-horizontal",
+        disabled=False,
+        isVictron=True,
     )
 )
 
