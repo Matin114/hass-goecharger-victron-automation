@@ -114,7 +114,7 @@ class GoESurplusService():
         chargePrioSelect = self.hass.states.get('select.custom_chargeprio')
         for key, description in CONST_VICTRON_CHARGE_PRIOS.items():
             if chargePrioSelect.state == description:
-                self.chargePrio = key
+                self.chargePrio = int(key)
                 break
         if self.chargePrio == -1:
             self.chargePrio = 0
