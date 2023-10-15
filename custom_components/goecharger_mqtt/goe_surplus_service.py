@@ -38,12 +38,12 @@ class GoESurplusService():
         # key=variableName, value=hass sensor name
         sensorData = {
             "globalGrid" : "sensor.custom_globalGrid",
-            "batteryPower" : "sensor.custom_globalGrid",
+            "batteryPower" : "sensor.custom_batteryPower",
             "batteryCurrent" : "sensor.custom_batteryCurrent",
             "batteryVoltage" : "sensor.custom_batteryVoltage",
             "batterySoc" : "sensor.custom_batterySOC",
             "carChargePower" : "sensor.go_echarger_217953_nrg_12",
-            "maxBatteryChargePower" : "sensor.custom_globalGrid",
+            "maxBatteryChargePower" : "sensor.custom_maxBatteryChargePower",
             "powerPhaseOne" : "sensor.go_echarger_217953_nrg_5",
             "powerPhaseTwo" : "sensor.go_echarger_217953_nrg_6",
             "powerPhaseThree" : "sensor.go_echarger_217953_nrg_7",
@@ -51,7 +51,7 @@ class GoESurplusService():
         unavailableSensorData = []
 
         # check if all sensor data is available
-        for varName, sensor in sensorData:
+        for varName, sensor in sensorData.items():
             try:
                 sensorData[varName] = float(self.hass.states.get(sensor).state)
             except ValueError:
