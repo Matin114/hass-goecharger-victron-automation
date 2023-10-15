@@ -47,8 +47,8 @@ class GoEChargerSelect(GoEChargerEntity, SelectEntity):
         self._attr_current_option = None
         # turn of wallbox when homeassistant restarts
         if description.key == "chargePrio":
-            self._attr_current_option = CONST_VICTRON_CHARGE_PRIOS["0"]
-            self.hass.async_add_job(self.async_select_option, CONST_VICTRON_CHARGE_PRIOS["0"])
+            self._attr_current_option = CONST_VICTRON_CHARGE_PRIOS[0]
+            self.hass.async_add_job(self.async_select_option, CONST_VICTRON_CHARGE_PRIOS[0])
 
 
     @property
