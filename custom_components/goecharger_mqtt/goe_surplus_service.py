@@ -64,8 +64,7 @@ class GoESurplusService():
             "oldAmpVal" : f"number.go_echarger_{serialNumber}_amp",
             "oldPsmVal" : f"sensor.go_echarger_{serialNumber}_psm",
             "totalEnergy" : f"sensor.go_echarger_{serialNumber}_eto",
-            "targetCarPowerAmount" : "sensor.custom_targetCarPowerAmount",
-            "targetCarPowerAmountFulfilled" : "sensor.custom_targetCarPowerAmountFulfilled"
+            "targetCarPowerAmount" : "number.custom_targetCarPowerAmount"
         }
         unavailableSensorData = []
 
@@ -106,7 +105,10 @@ class GoESurplusService():
         
         self.totalEnergy = mandatorySensorData["totalEnergy"]
         self.targetCarPowerAmount = mandatorySensorData["targetCarPowerAmount"]
-        self.targetCarPowerAmountFulfilled = mandatorySensorData["targetCarPowerAmountFulfilled"]
+        try:
+            self.targetCarPowerAmountFulfilled = float(self.hass.states.get("sensor.custom_targetCarPowerAmountFulfilled").state)
+        except ValueError:
+            self.targetCarPowerAmountFulfilled = 0
         
         # regoster everey used phase
         self.usedPhases += 1 if mandatorySensorData["powerPhaseOne"] > 0 else 0
