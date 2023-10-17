@@ -213,6 +213,17 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         icon="mdi:swap-horizontal",
         disabled=False,
         isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="targetCarPowerAmountFulfilled",
+        name="Wh the car was already charged",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=ENERGY_WATT_HOUR,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
     )
 )
 

@@ -6,7 +6,7 @@ from homeassistant.components import mqtt
 from homeassistant.components.number import NumberEntity
 from homeassistant.core import callback
 
-from .definitions.number import NUMBERS, GoEChargerNumberEntityDescription
+from .definitions.number import GOE_NUMBERS, VICTRON_NUMBERS, GoEChargerNumberEntityDescription
 from .entity import GoEChargerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ async def async_setup_entry(
     """Config entry setup."""
     async_add_entities(
         GoEChargerNumber(config_entry, description)
-        for description in NUMBERS
+        for description in GOE_NUMBERS + VICTRON_NUMBERS
         if not description.disabled
     )
 
@@ -39,11 +39,19 @@ class GoEChargerNumber(GoEChargerEntity, NumberEntity):
         super().__init__(config_entry, description)
 
         self.entity_description = description
-        self._attr_available = False
+        # by default goe numbers are not available, but victron numbers should be
+        self._attr_available = description.isVictron
+        if description.isVictron:
+            self._attr_native_value = 0
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
-        await mqtt.async_publish(self.hass, f"{self._topic}/set", int(value))
+        setterTopic = f"{self._topic}"
+        if not self.entity_description.isVictron:
+            setterTopic += "/set"
+        await mqtt.async_publish(
+            self.hass, setterTopic, int(value)
+        )
 
     async def async_added_to_hass(self):
         """Subscribe to MQTT events."""

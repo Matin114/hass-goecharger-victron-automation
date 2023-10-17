@@ -32,4 +32,5 @@ CONST_VICTRON_CHARGE_PRIOS = {
     "5": "Netzstrom", # use power from the grid to fast charge the car
     "6": "Manuel", # charge with the configured power from confDischargePower
     "7": "Automatik", # automatically decide to either charge the car or home battery
+    "8": "Manuelle Menge" # charge car with a given amount of Wh
 }

@@ -31,6 +31,12 @@ class GoESurplusService():
     oldFrcVal: float
     oldPsmVal: float
 
+    # PRIO 8 charge car with a given amount of Wh
+    totalEnergy : float # (Wh) total power ever charged with the wallbox
+    powerAmountStart : float # (Wh) power at start of prio where car gets charged with a given amount of Wh
+    targetCarPowerAmount : float # (Wh) power that should be charged
+    targetCarPowerAmountFulfilled : float# (Wh) power already charged in prio 8
+
     valueChangeAllower = {} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
 
     def __init__(
@@ -57,6 +63,9 @@ class GoESurplusService():
             "powerPhaseThree" : f"sensor.go_echarger_{serialNumber}_nrg_7",
             "oldAmpVal" : f"number.go_echarger_{serialNumber}_amp",
             "oldPsmVal" : f"sensor.go_echarger_{serialNumber}_psm",
+            "totalEnergy" : f"sensor.go_echarger_{serialNumber}_eto",
+            "targetCarPowerAmount" : "sensor.custom_targetCarPowerAmount",
+            "targetCarPowerAmountFulfilled" : "sensor.custom_targetCarPowerAmountFulfilled"
         }
         unavailableSensorData = []
 
@@ -95,12 +104,14 @@ class GoESurplusService():
         # TODO calculate maxBatteryChargePower here or in a own service
         self.maxBatteryChargePower = mandatorySensorData["maxBatteryChargePower"]
         
+        self.totalEnergy = mandatorySensorData["totalEnergy"]
+        self.targetCarPowerAmount = mandatorySensorData["targetCarPowerAmount"]
+        self.targetCarPowerAmountFulfilled = mandatorySensorData["targetCarPowerAmountFulfilled"]
+        
         # regoster everey used phase
         self.usedPhases += 1 if mandatorySensorData["powerPhaseOne"] > 0 else 0
         self.usedPhases += 1 if mandatorySensorData["powerPhaseTwo"] > 0 else 0
         self.usedPhases += 1 if mandatorySensorData["powerPhaseThree"] > 0 else 0
-
-        # set old values
 
         # get old targetCarChargePower, if none fount use 0
         self.oldAmpVal = mandatorySensorData["oldAmpVal"]
@@ -224,13 +235,33 @@ class GoESurplusService():
         elif self.chargePrio == 5: # use power from the grid to fast charge the car
             targetCarChargePower = availablePower + 27000
             self.instantUpdatePower = True
+        elif self.chargePrio == 8: # charge car with a given amount of Wh
+            # when the chargePrio is changed set current totalEnergy for targetCarPowerAmountFulfilled
+            if self.instantUpdatePower:
+                self.powerAmountStart = self.totalEnergy
+
+            newTargetCarPowerAmountFulfilled = abs(round(self.totalEnergy - self.powerAmountStart))
+            # check if targetCarPowerAmount was already reached 
+            if newTargetCarPowerAmountFulfilled >= self.targetCarPowerAmount:
+                targetCarChargePower = 0
+                self.instantUpdatePower = True
+            else:
+                # otherwise charge 
+                # TODO have a configurable targetCarChargePower
+                targetCarChargePower = 1380
+
+            # update targetcarpoweramountfulfilled if needed
+            if (newTargetCarPowerAmountFulfilled != self.targetCarPowerAmountFulfilled):
+                self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/targetCarPowerAmountFulfilled", newTargetCarPowerAmountFulfilled)
+
+
         else: # either OFF or unknown chargePrio
             targetCarChargePower = 0
             self.instantUpdatePower = True
 
 
         # smoothen out targetCarChargePower for it not to flicker around, but only if difference to old targetCarChargePower is greater than 200
-        if not self.instantUpdatePower and not self.oldTargetCarChargePower == 0 and targetCarChargePower > 0 and abs(targetCarChargePower-self.oldTargetCarChargePower) > 200:
+        if not self.instantUpdatePower and not self.oldTargetCarChargePower == 0 and targetCarChargePower > 1380 and abs(targetCarChargePower-self.oldTargetCarChargePower) > 200:
             targetCarChargePower = round((targetCarChargePower+6*self.oldTargetCarChargePower)/7)
 
             

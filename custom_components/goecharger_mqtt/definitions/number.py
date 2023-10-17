@@ -21,8 +21,23 @@ class GoEChargerNumberEntityDescription(
 
     domain: str = "number"
 
+VICTRON_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
+    GoEChargerNumberEntityDescription(
+        key="targetCarPowerAmount",
+        name="Wh to charge the car with",
+        entity_category=EntityCategory.CONFIG,
+        device_class=NumberDeviceClass.POWER,
+        native_unit_of_measurement=ENERGY_WATT_HOUR,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        native_max_value=50000,
+        native_min_value=0,
+        native_step=100,
+        isVictron=True
+    ),
+)
 
-NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
+GOE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     GoEChargerNumberEntityDescription(
         key="ama",
         name="Maximum current limit",
