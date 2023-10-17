@@ -167,6 +167,14 @@ class GoESurplusService():
             self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/psmUpdateTimer", psmUpdateTimer)
             # use old psm value if not changed for correct calculation of AMPs
             psmNewVal = self.oldPsmVal if psmUpdateTimer != 0 else psmNewVal
+        else:
+            # if instantUpdate is set, reset all update timers
+            if self.oldFrcVal != 0:
+                self.updateValueTimer("frc", frcNewVal, frcNewVal, 0)
+                self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/frcUpdateTimer", frcUpdateTimer)
+            if self.oldPsmVal != 0:
+                self.updateValueTimer("psm", psmNewVal, psmNewVal, 0)
+                self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/psmUpdateTimer", psmUpdateTimer)
     
 
         ampNewVal = self.calcAmpNewVal(targetCarChargePower, psmNewVal)
@@ -244,14 +252,9 @@ class GoESurplusService():
             self.valueChangeAllower[valName] = None
         else:
             now = datetime.now()
-            if self.valueChangeAllower[valName] == None:
+            if valName not in self.valueChangeAllower:
                 # first occurance of the values differing: register the valueChangeRequest
                 self.valueChangeAllower[valName] = now+timedelta(seconds=timeout)
-                now-(now-timedelta(seconds=100))
-
-                delta = now-(now-timedelta(seconds=100))
-                delta.total_seconds()
-
                 return timeout
             else:
                 # check if time of valueChangeRequest was reached
