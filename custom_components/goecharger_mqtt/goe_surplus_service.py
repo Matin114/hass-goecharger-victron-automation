@@ -249,7 +249,7 @@ class GoESurplusService():
         If oldVal and newVal become the same the change timer is stopped and resets"""
         if oldVal == newVal:
             # values are equal, so reset timer
-            self.valueChangeAllower[valName] = None
+            self.valueChangeAllower.pop(valName, None)
         else:
             now = datetime.now()
             if valName not in self.valueChangeAllower:
