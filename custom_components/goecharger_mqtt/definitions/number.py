@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import logging
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntityDescription
-from homeassistant.const import ELECTRIC_CURRENT_AMPERE, ENERGY_WATT_HOUR, TIME_SECONDS
+from homeassistant.const import ELECTRIC_CURRENT_AMPERE, ENERGY_WATT_HOUR, TIME_SECONDS, POWER_WATT
 from homeassistant.helpers.entity import EntityCategory
 
 from . import GoEChargerEntityDescription
@@ -33,6 +33,19 @@ VICTRON_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
         native_max_value=50000,
         native_min_value=0,
         native_step=100,
+        isVictron=True
+    ),
+    GoEChargerNumberEntityDescription(
+        key="manualCarChargePower",
+        name="Manual Power for car charging",
+        entity_category=EntityCategory.CONFIG,
+        device_class=NumberDeviceClass.POWER,
+        native_unit_of_measurement=POWER_WATT,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        native_max_value=22000,
+        native_min_value=1380,
+        native_step=230,
         isVictron=True
     ),
 )

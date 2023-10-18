@@ -42,7 +42,7 @@ class GoEChargerNumber(GoEChargerEntity, NumberEntity):
         # by default goe numbers are not available, but victron numbers should be
         self._attr_available = description.isVictron
         if description.isVictron:
-            self._attr_native_value = 0
+            self._attr_native_value = self.native_min_value
 
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""

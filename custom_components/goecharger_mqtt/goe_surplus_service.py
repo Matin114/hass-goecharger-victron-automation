@@ -16,6 +16,9 @@ class GoESurplusService():
     __name__ = "GoESurplusService"
 
     hass: HomeAssistant
+    serialNumber: str
+    goeTopicPrefix: str
+
     chargePrio: int = -1
     globalGrid: float # global used power
     batteryPower: float # current power the battery is charged with
@@ -31,11 +34,14 @@ class GoESurplusService():
     oldFrcVal: float
     oldPsmVal: float
 
+    # PRIO 6 & 8 
+    manualCarChargePower: float # (W) targetCarChargePower will be set to this in Prio 6 & 8
+
     # PRIO 8 charge car with a given amount of Wh
-    totalEnergy : float # (Wh) total power ever charged with the wallbox
-    powerAmountStart : float # (Wh) power at start of prio where car gets charged with a given amount of Wh
-    targetCarPowerAmount : float # (Wh) power that should be charged
-    targetCarPowerAmountFulfilled : float# (Wh) power already charged in prio 8
+    totalEnergy: float # (Wh) total power ever charged with the wallbox
+    powerAmountStart: float # (Wh) power at start of prio where car gets charged with a given amount of Wh
+    targetCarPowerAmount: float # (Wh) power that should be charged
+    targetCarPowerAmountFulfilled: float# (Wh) power already charged in prio 8
 
     valueChangeAllower = {} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
 
@@ -46,9 +52,13 @@ class GoESurplusService():
         """Initialize the Service."""
         
         self.hass = hass
+
+        configEntry = self.hass.config_entries.async_entries(DOMAIN)[0]
+        serialNumber = configEntry.data[CONF_SERIAL_NUMBER]
+        goeTopicPrefix = f"{configEntry.data[CONF_GOE_TOPIC_PREFIX]}/{serialNumber}"
     
     # returns True if data initialization was successful, otherwise False
-    def initData(self, serialNumber:str) -> bool:
+    def initData(self) -> bool:
         # key=variableName, value=hass sensor name
         mandatorySensorData = {
             "globalGrid" : "sensor.custom_globalGrid",
@@ -56,15 +66,16 @@ class GoESurplusService():
             "batteryCurrent" : "sensor.custom_batteryCurrent",
             "batteryVoltage" : "sensor.custom_batteryVoltage",
             "batterySoc" : "sensor.custom_batterySOC",
-            "carChargePower" : f"sensor.go_echarger_{serialNumber}_nrg_12",
+            "carChargePower" : f"sensor.go_echarger_{self.serialNumber}_nrg_12",
             "maxBatteryChargePower" : "sensor.custom_maxBatteryChargePower",
-            "powerPhaseOne" : f"sensor.go_echarger_{serialNumber}_nrg_5",
-            "powerPhaseTwo" : f"sensor.go_echarger_{serialNumber}_nrg_6",
-            "powerPhaseThree" : f"sensor.go_echarger_{serialNumber}_nrg_7",
-            "oldAmpVal" : f"number.go_echarger_{serialNumber}_amp",
-            "oldPsmVal" : f"sensor.go_echarger_{serialNumber}_psm",
-            "totalEnergy" : f"sensor.go_echarger_{serialNumber}_eto",
-            "targetCarPowerAmount" : "number.custom_targetCarPowerAmount"
+            "powerPhaseOne" : f"sensor.go_echarger_{self.serialNumber}_nrg_5",
+            "powerPhaseTwo" : f"sensor.go_echarger_{self.serialNumber}_nrg_6",
+            "powerPhaseThree" : f"sensor.go_echarger_{self.serialNumber}_nrg_7",
+            "oldAmpVal" : f"number.go_echarger_{self.serialNumber}_amp",
+            "oldPsmVal" : f"sensor.go_echarger_{self.serialNumber}_psm",
+            "totalEnergy" : f"sensor.go_echarger_{self.serialNumber}_eto",
+            "targetCarPowerAmount" : "number.custom_targetCarPowerAmount",
+            "manualCarChargePower" : "number.custom_manualCarChargePower"
         }
         unavailableSensorData = []
 
@@ -77,7 +88,7 @@ class GoESurplusService():
         
         # get frc data since it is mapped to strings
         frcPossibleStateDict: dict[int, str] = getattr(GoEChargerStatusCodes, "frc")
-        oldFrcState = self.hass.states.get(f"select.go_echarger_{serialNumber}_frc").state
+        oldFrcState = self.hass.states.get(f"select.go_echarger_{self.serialNumber}_frc").state
         oldFrcVal = -1
 
         for code, description in frcPossibleStateDict.items():
@@ -85,7 +96,7 @@ class GoESurplusService():
                 oldFrcVal = code
         if oldFrcVal == -1:
             # sensor data not available
-            unavailableSensorData.append(f"select.go_echarger_{serialNumber}_frc")
+            unavailableSensorData.append(f"select.go_echarger_{self.serialNumber}_frc")
         else:
             self.oldFrcVal = oldFrcVal
 
@@ -109,6 +120,8 @@ class GoESurplusService():
             self.targetCarPowerAmountFulfilled = float(self.hass.states.get("sensor.custom_targetCarPowerAmountFulfilled").state)
         except ValueError:
             self.targetCarPowerAmountFulfilled = 0
+
+        self.manualCarChargePower = mandatorySensorData["manualCarChargePower"]
         
         # regoster everey used phase
         self.usedPhases += 1 if mandatorySensorData["powerPhaseOne"] > 0 else 0
@@ -136,14 +149,16 @@ class GoESurplusService():
         # if new prio was selected always instat update all fields
         self.instantUpdatePower = True if chargePrioSelect.last_changed > datetime.now(pytz.UTC)-timedelta(seconds=1) else False
 
+        # reset targetCarPowerAmountFulfilled for Prio 8
+        if self.instantUpdatePower:
+            self.targetCarPowerAmountFulfilled = 0
+            self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/targetCarPowerAmountFulfilled", 0)
+
+
         return True
 
     def executeService(self):
-        configEntry = self.hass.config_entries.async_entries(DOMAIN)[0]
-        serialNumber = configEntry.data[CONF_SERIAL_NUMBER]
-        goeTopicPrefix = f"{configEntry.data[CONF_GOE_TOPIC_PREFIX]}/{serialNumber}"
-
-        if not self.initData(serialNumber):
+        if not self.initData():
             _LOGGER.warn("Data initialization failed! Controller won't be executed!")
             return
         
@@ -196,8 +211,8 @@ class GoESurplusService():
         # self.hass.async_add_job(GoEChargerSelect.async_select_option, "OFF")
         
         # update amp if needed
-        if (ampNewVal != self.hass.states.get(f"number.go_echarger_{serialNumber}_amp").state):
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{goeTopicPrefix}/amp/set", ampNewVal)
+        if (ampNewVal != self.hass.states.get(f"number.go_echarger_{self.serialNumber}_amp").state):
+            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{self.goeTopicPrefix}/amp/set", ampNewVal)
 
         # update targetCarChargePower if needed
         if (targetCarChargePower != self.oldTargetCarChargePower):
@@ -205,11 +220,11 @@ class GoESurplusService():
 
         # update frc if needed
         if (frcNewVal != self.oldFrcVal and frcUpdateTimer == 0):
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{goeTopicPrefix}/frc/set", frcNewVal)
+            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{self.goeTopicPrefix}/frc/set", frcNewVal)
         
         # update psm if needed
         if (psmNewVal != self.oldPsmVal and psmUpdateTimer == 0):
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{goeTopicPrefix}/psm/set", psmNewVal)
+            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{self.goeTopicPrefix}/psm/set", psmNewVal)
             
 
     def calcTargetCarChargePower(self) -> int:
@@ -237,6 +252,9 @@ class GoESurplusService():
         elif self.chargePrio == 5: # use power from the grid to fast charge the car
             targetCarChargePower = availablePower + 27000
             self.instantUpdatePower = True
+        elif self.chargePrio == 6:
+            targetCarChargePower = self.manualCarChargePower
+            self.instantUpdatePower = True
         elif self.chargePrio == 8: # charge car with a given amount of Wh
             # when the chargePrio is changed set current totalEnergy for targetCarPowerAmountFulfilled
             if self.instantUpdatePower:
@@ -250,7 +268,7 @@ class GoESurplusService():
             else:
                 # otherwise charge 
                 # TODO have a configurable targetCarChargePower
-                targetCarChargePower = 1380
+                targetCarChargePower = self.manualCarChargePower
 
             # update targetcarpoweramountfulfilled if needed
             if (newTargetCarPowerAmountFulfilled != self.targetCarPowerAmountFulfilled):
