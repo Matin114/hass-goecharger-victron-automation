@@ -63,6 +63,7 @@ class GoESurplusService():
     
     # returns True if data initialization was successful, otherwise False
     def initData(self) -> bool:
+        self.chargePrio.getData()
         # key=variableName, value=hass sensor name
         mandatorySensorData = {
             "globalGrid" : "sensor.custom_globalGrid",

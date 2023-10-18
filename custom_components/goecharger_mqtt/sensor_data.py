@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Callable
+from typing import Any
 
 from homeassistant.core import HomeAssistant, State
 from homeassistant.components import mqtt
@@ -11,21 +12,27 @@ _LOGGER = logging.getLogger(__name__)
 class SensorData():
     hass: HomeAssistant
     entityId: str
-    dataType: type = str
-    state: dataType | None
-    defaultData: dataType | None = None
-    mandatory: bool = False
-    stateMethod: Callable | None = None # Method that is called when gathering the state of this entity
+    dataType: type
+    mandatory: bool
+    defaultData: Any | None
+    stateMethod: Callable | None # Method that is called when gathering the state of this entity
+    state: Any | None = None
     additionalData: dict | None = None
-    
-    def __init__(self) -> None:
-        pass
+
+    def __init__(self, hass:HomeAssistant, entityId:str, dataType:type=str, mandatory=False, defaultData=None, stateMethod=None) -> None:
+        self.hass = hass
+        self.entityId = entityId
+        self.dataType = dataType
+        self.mandatory = mandatory
+        self.defaultData = defaultData
+        self.stateMethod = stateMethod
+        self.additionalData = {}
 
     def getData(self):
         try:
-            curState = self.hass.states.get(self.entityId).state
+            curState = self.hass.states.get(self.entityId)
             # get state, but use stateMethod if one exists
-            self.state = self.dataType(curState if self.stateMethod == None else self.stateMethod(curState))
+            self.state = self.dataType(curState.state if self.stateMethod == None else self.stateMethod(self, curState))
         except ValueError:
             self.state = None
         
