@@ -9,6 +9,8 @@ from .const import CONF_GOE_TOPIC_PREFIX, CONF_SERIAL_NUMBER, CONST_VICTRON_CHAR
 
 from .definitions import GoEChargerStatusCodes
 
+from .sensor_data import GoESensorData, VictronSensorData, stateChargePrio
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -19,7 +21,7 @@ class GoESurplusService():
     serialNumber: str
     goeTopicPrefix: str
 
-    chargePrio: int = -1
+    chargePrio: VictronSensorData
     globalGrid: float # global used power
     batteryPower: float # current power the battery is charged with
     batteryCurrent: float
@@ -50,12 +52,14 @@ class GoESurplusService():
         hass : HomeAssistant,
     ) -> None:
         """Initialize the Service."""
-        
         self.hass = hass
 
         configEntry = self.hass.config_entries.async_entries(DOMAIN)[0]
-        serialNumber = configEntry.data[CONF_SERIAL_NUMBER]
-        goeTopicPrefix = f"{configEntry.data[CONF_GOE_TOPIC_PREFIX]}/{serialNumber}"
+        self.serialNumber = configEntry.data[CONF_SERIAL_NUMBER]
+        self.goeTopicPrefix = f"{configEntry.data[CONF_GOE_TOPIC_PREFIX]}/{self.serialNumber}"
+
+        self.chargePrio = VictronSensorData(hass=hass, entityId="select.custom_chargeprio", dataType=int, defaultData=-1, mandatory=True, stateMethod=stateChargePrio)
+
     
     # returns True if data initialization was successful, otherwise False
     def initData(self) -> bool:
@@ -136,18 +140,8 @@ class GoESurplusService():
         except ValueError:
             self.oldTargetCarChargePower = 0
         
-        # get charge priority
-        chargePrioSelect = self.hass.states.get('select.custom_chargeprio')
-        for key, description in CONST_VICTRON_CHARGE_PRIOS.items():
-            if chargePrioSelect.state == description:
-                self.chargePrio = int(key)
-                break
-        if self.chargePrio == -1:
-            self.chargePrio = 0
-            _LOGGER.warn(f"Configured chargePrio is not know to the controller, but: {chargePrioSelect.state}\nCharger was turned off!")
-        
         # if new prio was selected always instat update all fields
-        self.instantUpdatePower = True if chargePrioSelect.last_changed > datetime.now(pytz.UTC)-timedelta(seconds=1) else False
+        self.instantUpdatePower = True if self.chargePrio.additionalData["last_changed"] > datetime.now(pytz.UTC)-timedelta(seconds=1) else False
 
         # reset targetCarPowerAmountFulfilled for Prio 8
         if self.instantUpdatePower:
@@ -231,7 +225,7 @@ class GoESurplusService():
         availablePower = self.batteryPower - self.globalGrid + self.carChargePower
         targetCarChargePower = 0
         
-        if self.chargePrio == 1: # prioritize battery
+        if self.chargePrio.state == 1: # prioritize battery
             targetCarChargePower = availablePower - self.maxBatteryChargePower
             # try not to feed the grid with more than 300W but also not drain energy from battery
             # IF targetCarChargePower between 300 (an allowed grid feed value) and 1380 (minimal possible charge for go-e wallbox)
@@ -239,9 +233,9 @@ class GoESurplusService():
             # SET targetCarChargePower to the minimal of 1380
             if 300 < targetCarChargePower < 1380 and 1680 < self.batteryPower - self.globalGrid > self.maxBatteryChargePower:
                 targetCarChargePower = 1380
-        elif self.chargePrio == 2: # prioritize wallbox
+        elif self.chargePrio.state == 2: # prioritize wallbox
             targetCarChargePower = availablePower
-        elif self.chargePrio == 3: # split available power between battery and wallbox
+        elif self.chargePrio.state == 3: # split available power between battery and wallbox
             targetCarChargePower = availablePower/2
             # try not to feed the grid with more than 300W but also not drain energy from battery
             # IF targetCarChargePower between 300 (an allowed grid feed value) and 1380 (minimal possible charge for go-e wallbox)
@@ -249,13 +243,13 @@ class GoESurplusService():
             # SET targetCarChargePower to the minimal of 1380
             if 300 < targetCarChargePower < 1380 and 1680 < self.batteryPower - self.globalGrid:
                 targetCarChargePower = 1380   
-        elif self.chargePrio == 5: # use power from the grid to fast charge the car
+        elif self.chargePrio.state == 5: # use power from the grid to fast charge the car
             targetCarChargePower = availablePower + 27000
             self.instantUpdatePower = True
-        elif self.chargePrio == 6:
+        elif self.chargePrio.state == 6:
             targetCarChargePower = self.manualCarChargePower
             self.instantUpdatePower = True
-        elif self.chargePrio == 8: # charge car with a given amount of Wh
+        elif self.chargePrio.state == 8: # charge car with a given amount of Wh
             # when the chargePrio is changed set current totalEnergy for targetCarPowerAmountFulfilled
             if self.instantUpdatePower:
                 self.powerAmountStart = self.totalEnergy
@@ -286,7 +280,7 @@ class GoESurplusService():
 
             
         # avoid feeding the grid with more power than is being charged
-        if self.chargePrio > 0:
+        if self.chargePrio.state > 0:
             if self.batterySoc > 95 and targetCarChargePower < self.carChargePower - self.globalGrid:
                 targetCarChargePower = self.carChargePower - self.globalGrid
             elif targetCarChargePower < self.globalGrid *-1:
@@ -333,7 +327,7 @@ class GoESurplusService():
 
         # enable discharging battery for priority 2 (prioritize battery) 
         # IF battery is already charged up to 95% AND feeding the grid with more than 300W
-        if self.chargePrio == 2 and self.batterySoc >= 95 and self.globalGrid < -300:
+        if self.chargePrio.state == 2 and self.batterySoc >= 95 and self.globalGrid < -300:
             if ampNewVal < 6:
                 ampNewVal = 6
             else:
