@@ -9,7 +9,7 @@ from .const import CONF_GOE_TOPIC_PREFIX, CONF_SERIAL_NUMBER, CONST_VICTRON_CHAR
 
 from .definitions import GoEChargerStatusCodes
 
-from .sensor_data import GoESensorData, VictronSensorData, stateChargePrio
+from .sensor_data import SensorData, GoESensorData, VictronSensorData, InternalSensorData, stateChargePrio, stateUsedPhases, stateFrc
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,33 +18,32 @@ class GoESurplusService():
     __name__ = "GoESurplusService"
 
     hass: HomeAssistant
-    serialNumber: str
-    goeTopicPrefix: str
 
+    # mandatory
     chargePrio: VictronSensorData
-    globalGrid: float # global used power
-    batteryPower: float # current power the battery is charged with
-    batteryCurrent: float
-    batteryVoltage: float
-    batterySoc: float # battery chargelevel in %
-    maxBatteryChargePower: float # maximal allowed power the battery may be charged with
-    usedPhases: int = 0 # 0-3 for every phase used for charging the car 
-    instantUpdatePower: bool = False # if chargePrio changes or some prios are selected the chargePower should change instantly
-    carChargePower: float # current power the car is charged with
-    oldTargetCarChargePower: float # old targetCarChargePower
-    oldAmpVal: float
-    oldFrcVal: float
-    oldPsmVal: float
+    globalGrid: VictronSensorData # (W) global used power
+    batteryPower: VictronSensorData # (W) current power the battery is charged with
+    batterySoc: VictronSensorData # (%) battery chargelevel in %
+    oldTargetCarChargePower: VictronSensorData # (W) old targetCarChargePower
+    carChargePower: GoESensorData # (W) current power the car is charged with
+    oldFrcVal: GoESensorData # value of GoE key FRC
+    oldPsmVal: GoESensorData # value of GoE key PSM
+    usedPhases: InternalSensorData = 0 # (0-3) for every phase used for charging the car 
+    # conditional
+    maxBatteryChargePower: VictronSensorData # (W) maximal allowed power the battery may be charged with
+    manualCarChargePower: VictronSensorData # (W) targetCarChargePower will be set to this in Prio 6 & 8
+    targetCarPowerAmount: VictronSensorData # (Wh) power amount that should be charged in prio 8
+    targetCarPowerAmountFulfilled: VictronSensorData # (Wh) power already charged in prio 8
+    totalEnergy: GoESensorData # (Wh) total power ever charged with the wallbox
 
-    # PRIO 6 & 8 
-    manualCarChargePower: float # (W) targetCarChargePower will be set to this in Prio 6 & 8
+    frcUpdateTimer: VictronSensorData # a timer showing when frc will be updated
+    psmUpdateTimer: VictronSensorData # a timer showing when frc will be updated
+    oldAmpVal: GoESensorData # value of GoE key AMP
 
-    # PRIO 8 charge car with a given amount of Wh
-    totalEnergy: float # (Wh) total power ever charged with the wallbox
     powerAmountStart: float # (Wh) power at start of prio where car gets charged with a given amount of Wh
-    targetCarPowerAmount: float # (Wh) power that should be charged
-    targetCarPowerAmountFulfilled: float# (Wh) power already charged in prio 8
 
+    instantUpdatePower: bool = False # (bool) if chargePrio changes or some prios are selected the chargePower should change instantly
+    mandatorySensorList:list[SensorData]
     valueChangeAllower = {} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
 
     def __init__(
@@ -55,99 +54,83 @@ class GoESurplusService():
         self.hass = hass
 
         configEntry = self.hass.config_entries.async_entries(DOMAIN)[0]
-        self.serialNumber = configEntry.data[CONF_SERIAL_NUMBER]
-        self.goeTopicPrefix = f"{configEntry.data[CONF_GOE_TOPIC_PREFIX]}/{self.serialNumber}"
+        serialNumber = configEntry.data[CONF_SERIAL_NUMBER]
+        goeTopicPrefix = f"{configEntry.data[CONF_GOE_TOPIC_PREFIX]}/{serialNumber}/"
 
-        self.chargePrio = VictronSensorData(hass=hass, entityId="select.custom_chargeprio", dataType=int, defaultData=-1, mandatory=True, stateMethod=stateChargePrio)
+        self.chargePrio = VictronSensorData(hass=hass, entityId="select.custom_chargeprio", dataType=int, defaultData=-1, stateMethod=stateChargePrio)
+        self.globalGrid = VictronSensorData(hass=hass, entityId="sensor.custom_globalGrid", dataType=float)
+        self.batteryPower = VictronSensorData(hass=hass, entityId="sensor.custom_batteryPower", dataType=float)
+        self.batterySoc = VictronSensorData(hass=hass, entityId="sensor.custom_batterySOC", dataType=float)
+        self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_batterySOC", dataType=float, defaultData=0)
 
-    
-    # returns True if data initialization was successful, otherwise False
+        # TODO calculate maxBatteryChargePower interally
+        self.maxBatteryChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_maxBatteryChargePower", dataType=float)
+        self.targetCarPowerAmount = VictronSensorData(hass=hass, entityId="number.custom_targetCarPowerAmount", dataType=float)
+        self.manualCarChargePower = VictronSensorData(hass=hass, entityId="number.custom_manualCarChargePower", dataType=float)
+        self.targetCarPowerAmountFulfilled = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarPowerAmountFulfilled", dataType=float, defaultData=0)
+        self.frcUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_frcUpdateTimer", dataType=int)
+        self.psmUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_psmUpdateTimer", dataType=int)
+
+        self.carChargePower = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_12", dataType=float)
+        self.oldFrcVal = GoESensorData(hass=hass, entityId=f"select.go_echarger_{serialNumber}_frc", mqttTopic=f"{goeTopicPrefix}frc", dataType=int, stateMethod=stateFrc)
+        self.oldPsmVal = GoESensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_psm", mqttTopic=f"{goeTopicPrefix}psm", dataType=int)
+        self.totalEnergy = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_eto", dataType=float)
+        self.oldAmpVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_amp", dataType=int)
+
+        usedPhasesAdditionalData = { "powerPhaseList": [GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_5", dataType=float), 
+                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_6", dataType=float),
+                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_7", dataType=float)]}
+        self.usedPhases = InternalSensorData(hass=hass, entityId="goeServiceInternal.usedPhases", stateMethod=stateUsedPhases, additionalData=usedPhasesAdditionalData)
+
+
+        # these sensors are always needes, so should always be loaded
+        self.mandatorySensorList = [self.chargePrio, self.globalGrid, self.batteryPower, self.batterySoc, self.oldTargetCarChargePower, 
+                                        self.carChargePower, self.oldFrcVal, self.oldPsmVal, self.usedPhases]
+
+
     def initData(self) -> bool:
-        self.chargePrio.getData()
-        # key=variableName, value=hass sensor name
-        mandatorySensorData = {
-            "globalGrid" : "sensor.custom_globalGrid",
-            "batteryPower" : "sensor.custom_batteryPower",
-            "batteryCurrent" : "sensor.custom_batteryCurrent",
-            "batteryVoltage" : "sensor.custom_batteryVoltage",
-            "batterySoc" : "sensor.custom_batterySOC",
-            "carChargePower" : f"sensor.go_echarger_{self.serialNumber}_nrg_12",
-            "maxBatteryChargePower" : "sensor.custom_maxBatteryChargePower",
-            "powerPhaseOne" : f"sensor.go_echarger_{self.serialNumber}_nrg_5",
-            "powerPhaseTwo" : f"sensor.go_echarger_{self.serialNumber}_nrg_6",
-            "powerPhaseThree" : f"sensor.go_echarger_{self.serialNumber}_nrg_7",
-            "oldAmpVal" : f"number.go_echarger_{self.serialNumber}_amp",
-            "oldPsmVal" : f"sensor.go_echarger_{self.serialNumber}_psm",
-            "totalEnergy" : f"sensor.go_echarger_{self.serialNumber}_eto",
-            "targetCarPowerAmount" : "number.custom_targetCarPowerAmount",
-            "manualCarChargePower" : "number.custom_manualCarChargePower"
-        }
-        unavailableSensorData = []
+        """returns True if data initialization was successful, otherwise False"""
+        unavailableSensorList = []
 
-        # check if all mandatory sensor data is available
-        for varName, sensor in mandatorySensorData.items():
-            try:
-                mandatorySensorData[varName] = float(self.hass.states.get(sensor).state)
-            except ValueError:
-                unavailableSensorData.append(sensor)
-        
-        # get frc data since it is mapped to strings
-        frcPossibleStateDict: dict[int, str] = getattr(GoEChargerStatusCodes, "frc")
-        oldFrcState = self.hass.states.get(f"select.go_echarger_{self.serialNumber}_frc").state
-        oldFrcVal = -1
+        for sensor in self.mandatorySensorList:
+            sensor.retrieveData()
+            if (sensor.state == None):
+                unavailableSensorList.append(sensor.entityId)
 
-        for code, description in frcPossibleStateDict.items():
-            if description == oldFrcState:
-                oldFrcVal = code
-        if oldFrcVal == -1:
-            # sensor data not available
-            unavailableSensorData.append(f"select.go_echarger_{self.serialNumber}_frc")
-        else:
-            self.oldFrcVal = oldFrcVal
-
-        # log all unavailable sensors
-        if unavailableSensorData:
-            _LOGGER.warn(f"Following fields couldn't be retrieved {unavailableSensorData}!\nCanceling charger calculations!")
+        # stop any further data gathering or calculation if a mandatory field is missing
+        if unavailableSensorList:
+            _LOGGER.warn(f"Following MANDATORY fields couldn't be retrieved {unavailableSensorList}!\nCanceling charger calculations!")
             return False
 
-        self.globalGrid = mandatorySensorData["globalGrid"]
-        self.batteryPower = mandatorySensorData["batteryPower"]
-        self.batteryCurrent = mandatorySensorData["batteryCurrent"]
-        self.batteryVoltage = mandatorySensorData["batteryVoltage"]
-        self.batterySoc = mandatorySensorData["batterySoc"]
-        self.carChargePower = mandatorySensorData["carChargePower"]
-        # TODO calculate maxBatteryChargePower here or in a own service
-        self.maxBatteryChargePower = mandatorySensorData["maxBatteryChargePower"]
-        
-        self.totalEnergy = mandatorySensorData["totalEnergy"]
-        self.targetCarPowerAmount = mandatorySensorData["targetCarPowerAmount"]
-        try:
-            self.targetCarPowerAmountFulfilled = float(self.hass.states.get("sensor.custom_targetCarPowerAmountFulfilled").state)
-        except ValueError:
-            self.targetCarPowerAmountFulfilled = 0
-
-        self.manualCarChargePower = mandatorySensorData["manualCarChargePower"]
-        
-        # regoster everey used phase
-        self.usedPhases += 1 if mandatorySensorData["powerPhaseOne"] > 0 else 0
-        self.usedPhases += 1 if mandatorySensorData["powerPhaseTwo"] > 0 else 0
-        self.usedPhases += 1 if mandatorySensorData["powerPhaseThree"] > 0 else 0
-
-        # get old targetCarChargePower, if none fount use 0
-        self.oldAmpVal = mandatorySensorData["oldAmpVal"]
-        self.oldPsmVal = mandatorySensorData["oldPsmVal"]
-        try:
-            self.oldTargetCarChargePower = float(self.hass.states.get("sensor.custom_targetCarChargePower").state)
-        except ValueError:
-            self.oldTargetCarChargePower = 0
-        
         # if new prio was selected always instat update all fields
         self.instantUpdatePower = True if self.chargePrio.additionalData["last_changed"] > datetime.now(pytz.UTC)-timedelta(seconds=1) else False
+        
+        conditionalSensorList:list[SensorData] = []
 
-        # reset targetCarPowerAmountFulfilled for Prio 8
+        if self.chargePrio.state == 1:
+            conditionalSensorList.append(self.maxBatteryChargePower)
+        elif self.chargePrio.state == 6:
+            conditionalSensorList.append(self.manualCarChargePower)
+        elif self.chargePrio.state == 8:
+            conditionalSensorList.append(self.manualCarChargePower)
+            conditionalSensorList.append(self.targetCarPowerAmount)
+            conditionalSensorList.append(self.targetCarPowerAmountFulfilled)
+            conditionalSensorList.append(self.totalEnergy)
+
+        for sensor in conditionalSensorList:
+            sensor.retrieveData()
+            if (sensor.state == None):
+                unavailableSensorList.append(sensor.entityId)
+
+        # stop any further data gathering or calculation if a conditional field is missing
+        if unavailableSensorList:
+            _LOGGER.warn(f"Following CONDITIONAL fields couldn't be retrieved {unavailableSensorList}!\nCanceling charger calculations!")
+            return False
+
+
         if self.instantUpdatePower:
-            self.targetCarPowerAmountFulfilled = 0
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/targetCarPowerAmountFulfilled", 0)
+            # reset targetCarPowerAmountFulfilled for Prio 8
+            self.targetCarPowerAmountFulfilled.setData(0)
 
 
         return True
@@ -172,7 +155,7 @@ class GoESurplusService():
             # if charging via two phases check with 3680 (2*230V*8A) 
             # to avoid often switching between single and multiphase charging
             # -> the lowest possible power would be 2760W, but I used 3680W to be able to make smaller power changes in a lower power region
-            if self.usedPhases == 2 and targetCarChargePower >= 3680:
+            if self.usedPhases.state == 2 and targetCarChargePower >= 3680:
                 psmNewVal = 2
             else:
                 psmNewVal = 1
@@ -182,57 +165,51 @@ class GoESurplusService():
         # wait for some fields for a certain time not to swap them to often. e.g. psm, since changing phase modes takes a little time and might jump arround
         frcUpdateTimer = 0
         psmUpdateTimer = 0
-        if not self.instantUpdatePower:
-            frcUpdateTimer = self.updateValueTimer("frc", self.oldFrcVal, frcNewVal, 30)
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/frcUpdateTimer", frcUpdateTimer)
-
-            psmUpdateTimer = self.updateValueTimer("psm", self.oldPsmVal, psmNewVal, 30)
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/psmUpdateTimer", psmUpdateTimer)
-            # use old psm value if not changed for correct calculation of AMPs
-            psmNewVal = self.oldPsmVal if psmUpdateTimer != 0 else psmNewVal
-        else:
+        if self.instantUpdatePower:
             # if instantUpdate is set, reset all update timers
-            if self.oldFrcVal != 0:
+            if self.oldFrcVal.state != 0:
                 self.updateValueTimer("frc", frcNewVal, frcNewVal, 0)
-                self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/frcUpdateTimer", frcUpdateTimer)
-            if self.oldPsmVal != 0:
+            if self.oldPsmVal.state != 0:
                 self.updateValueTimer("psm", psmNewVal, psmNewVal, 0)
-                self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/psmUpdateTimer", psmUpdateTimer)
+        else:
+            frcUpdateTimer = self.updateValueTimer("frc", self.oldFrcVal.state, frcNewVal, 30)
+
+            psmUpdateTimer = self.updateValueTimer("psm", self.oldPsmVal.state, psmNewVal, 30)
+            # use old psm value if not changed for correct calculation of AMPs
+            psmNewVal = self.oldPsmVal.state if psmUpdateTimer != 0 else psmNewVal
+
+        self.frcUpdateTimer.setData(frcUpdateTimer)
+        self.psmUpdateTimer.setData(psmUpdateTimer)
     
 
         ampNewVal = self.calcAmpNewVal(targetCarChargePower, psmNewVal)
 
-        # TODO replace the mqtt calls with the actual update of the sensor e.g.:
-        # self.hass.async_add_job(GoEChargerSelect.async_select_option, "OFF")
-        
-        # update amp if needed
-        if (ampNewVal != self.hass.states.get(f"number.go_echarger_{self.serialNumber}_amp").state):
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{self.goeTopicPrefix}/amp/set", ampNewVal)
+        # update amp
+        self.oldAmpVal.setData(ampNewVal)
 
-        # update targetCarChargePower if needed
-        if (targetCarChargePower != self.oldTargetCarChargePower):
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/targetCarChargePower", targetCarChargePower)
+        # update targetCarChargePower
+        self.oldTargetCarChargePower.setData(targetCarChargePower)
 
         # update frc if needed
-        if (frcNewVal != self.oldFrcVal and frcUpdateTimer == 0):
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{self.goeTopicPrefix}/frc/set", frcNewVal)
+        if (frcUpdateTimer == 0):
+            self.oldFrcVal.setData(frcNewVal)
         
         # update psm if needed
-        if (psmNewVal != self.oldPsmVal and psmUpdateTimer == 0):
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"{self.goeTopicPrefix}/psm/set", psmNewVal)
+        if (psmUpdateTimer == 0):
+            self.oldPsmVal.setData(psmNewVal)
             
 
     def calcTargetCarChargePower(self) -> int:
-        availablePower = self.batteryPower - self.globalGrid + self.carChargePower
+        availablePower = self.batteryPower.state - self.globalGrid.state + self.carChargePower.state
         targetCarChargePower = 0
         
         if self.chargePrio.state == 1: # prioritize battery
-            targetCarChargePower = availablePower - self.maxBatteryChargePower
+            targetCarChargePower = availablePower - self.maxBatteryChargePower.state
             # try not to feed the grid with more than 300W but also not drain energy from battery
             # IF targetCarChargePower between 300 (an allowed grid feed value) and 1380 (minimal possible charge for go-e wallbox)
             # AND PV produced energy is bigger than 1680 (1380 + 300) and bigger than the allowed battery charge power
             # SET targetCarChargePower to the minimal of 1380
-            if 300 < targetCarChargePower < 1380 and 1680 < self.batteryPower - self.globalGrid > self.maxBatteryChargePower:
+            if 300 < targetCarChargePower < 1380 and 1680 < self.batteryPower.state - self.globalGrid.state > self.maxBatteryChargePower.state:
                 targetCarChargePower = 1380
         elif self.chargePrio.state == 2: # prioritize wallbox
             targetCarChargePower = availablePower
@@ -242,32 +219,31 @@ class GoESurplusService():
             # IF targetCarChargePower between 300 (an allowed grid feed value) and 1380 (minimal possible charge for go-e wallbox)
             # AND PV produced energy is bigger than 1680 (1380 + 300)
             # SET targetCarChargePower to the minimal of 1380
-            if 300 < targetCarChargePower < 1380 and 1680 < self.batteryPower - self.globalGrid:
+            if 300 < targetCarChargePower < 1380 and 1680 < self.batteryPower.state - self.globalGrid.state:
                 targetCarChargePower = 1380   
         elif self.chargePrio.state == 5: # use power from the grid to fast charge the car
             targetCarChargePower = availablePower + 27000
             self.instantUpdatePower = True
         elif self.chargePrio.state == 6:
-            targetCarChargePower = self.manualCarChargePower
+            targetCarChargePower = self.manualCarChargePower.state
             self.instantUpdatePower = True
         elif self.chargePrio.state == 8: # charge car with a given amount of Wh
             # when the chargePrio is changed set current totalEnergy for targetCarPowerAmountFulfilled
             if self.instantUpdatePower:
-                self.powerAmountStart = self.totalEnergy
+                self.powerAmountStart = self.totalEnergy.state
 
-            newTargetCarPowerAmountFulfilled = abs(round(self.totalEnergy - self.powerAmountStart))
+            newTargetCarPowerAmountFulfilled = abs(round(self.totalEnergy.state - self.powerAmountStart.state))
             # check if targetCarPowerAmount was already reached 
-            if newTargetCarPowerAmountFulfilled >= self.targetCarPowerAmount:
+            if newTargetCarPowerAmountFulfilled >= self.targetCarPowerAmount.state:
                 targetCarChargePower = 0
                 self.instantUpdatePower = True
             else:
                 # otherwise charge 
                 # TODO have a configurable targetCarChargePower
-                targetCarChargePower = self.manualCarChargePower
+                targetCarChargePower = self.manualCarChargePower.state
 
-            # update targetcarpoweramountfulfilled if needed
-            if (newTargetCarPowerAmountFulfilled != self.targetCarPowerAmountFulfilled):
-                self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/targetCarPowerAmountFulfilled", newTargetCarPowerAmountFulfilled)
+            # update targetcarpoweramountfulfilled
+            self.targetCarPowerAmountFulfilled.setData(newTargetCarPowerAmountFulfilled)
 
 
         else: # either OFF or unknown chargePrio
@@ -276,16 +252,16 @@ class GoESurplusService():
 
 
         # smoothen out targetCarChargePower for it not to flicker around, but only if difference to old targetCarChargePower is greater than 200
-        if not self.instantUpdatePower and not self.oldTargetCarChargePower == 0 and targetCarChargePower > 1380 and abs(targetCarChargePower-self.oldTargetCarChargePower) > 200:
-            targetCarChargePower = round((targetCarChargePower+6*self.oldTargetCarChargePower)/7)
+        if not self.instantUpdatePower and not self.oldTargetCarChargePower.state == 0 and targetCarChargePower > 1380 and abs(targetCarChargePower-self.oldTargetCarChargePower.state) > 200:
+            targetCarChargePower = round((targetCarChargePower+5*self.oldTargetCarChargePower.state)/6)
 
             
         # avoid feeding the grid with more power than is being charged
         if self.chargePrio.state > 0:
-            if self.batterySoc > 95 and targetCarChargePower < self.carChargePower - self.globalGrid:
-                targetCarChargePower = self.carChargePower - self.globalGrid
-            elif targetCarChargePower < self.globalGrid *-1:
-                targetCarChargePower = self.globalGrid*-1
+            if self.batterySoc.state > 95 and targetCarChargePower < self.carChargePower.state - self.globalGrid.state:
+                targetCarChargePower = self.carChargePower.state - self.globalGrid.state
+            elif targetCarChargePower < self.globalGrid.state *-1:
+                targetCarChargePower = self.globalGrid.state*-1
 
         # avoid a negativ targetCarChargePower
         return targetCarChargePower if targetCarChargePower > 0 else 0
@@ -321,14 +297,14 @@ class GoESurplusService():
         else:
             # calculate two phase charging
             ampNewVal = targetCarChargePower/230/2
-            if self.usedPhases == 3:
+            if self.usedPhases.state == 3:
                 ampNewVal = targetCarChargePower/400/1.73
 
         ampNewVal = int(ampNewVal)
 
-        # enable discharging battery for priority 2 (prioritize battery) 
+        # enable discharging battery for priority 2 & 3 (prioritize battery & 50/50) 
         # IF battery is already charged up to 95% AND feeding the grid with more than 300W
-        if self.chargePrio.state == 2 and self.batterySoc >= 95 and self.globalGrid < -300:
+        if self.chargePrio.state in [2,3] and self.batterySoc.state >= 95 and self.globalGrid.state < -300:
             if ampNewVal < 6:
                 ampNewVal = 6
             else:
