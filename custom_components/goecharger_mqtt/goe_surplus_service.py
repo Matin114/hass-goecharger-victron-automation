@@ -31,6 +31,7 @@ class GoESurplusService():
     usedPhases: InternalSensorData = 0 # (0-3) for every phase used for charging the car 
     # conditional
     maxBatteryChargePower: VictronSensorData # (W) maximal allowed power the battery may be charged with
+    batterySocMin: VictronSensorData # (%) discharge battery to this soc in Prio 4
     manualCarChargePower: VictronSensorData # (W) targetCarChargePower will be set to this in Prio 6 & 8
     targetCarPowerAmount: VictronSensorData # (Wh) power amount that should be charged in prio 8
     targetCarPowerAmountFulfilled: VictronSensorData # (Wh) power already charged in prio 8
@@ -61,11 +62,12 @@ class GoESurplusService():
         self.globalGrid = VictronSensorData(hass=hass, entityId="sensor.custom_globalGrid", dataType=float)
         self.batteryPower = VictronSensorData(hass=hass, entityId="sensor.custom_batteryPower", dataType=float)
         self.batterySoc = VictronSensorData(hass=hass, entityId="sensor.custom_batterySOC", dataType=float)
-        self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarChargePower", dataType=float, defaultData=0)
+        self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarChargePower", dataType=float, defaultData=1)
 
         # TODO calculate maxBatteryChargePower interally
         self.maxBatteryChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_maxBatteryChargePower", dataType=float)
         self.targetCarPowerAmount = VictronSensorData(hass=hass, entityId="number.custom_targetCarPowerAmount", dataType=float)
+        self.batterySocMin = VictronSensorData(hass=hass, entityId="number.custom_batterySOCMin", dataType=float)
         self.manualCarChargePower = VictronSensorData(hass=hass, entityId="number.custom_manualCarChargePower", dataType=float)
         self.targetCarPowerAmountFulfilled = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarPowerAmountFulfilled", dataType=float, defaultData=0)
         self.frcUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_frcUpdateTimer", dataType=int)
@@ -109,6 +111,9 @@ class GoESurplusService():
 
         if self.chargePrio.state == 1:
             conditionalSensorList.append(self.maxBatteryChargePower)
+        elif self.chargePrio.state == 4:
+            conditionalSensorList.append(self.batterySocMin)
+            conditionalSensorList.append(self.manualCarChargePower)
         elif self.chargePrio.state == 6:
             conditionalSensorList.append(self.manualCarChargePower)
         elif self.chargePrio.state == 8:
@@ -221,6 +226,15 @@ class GoESurplusService():
             # SET targetCarChargePower to the minimal of 1380
             if 300 < targetCarChargePower < 1380 and 1680 < self.batteryPower.state - self.globalGrid.state:
                 targetCarChargePower = 1380   
+        elif self.chargePrio.state == 4: # discharge battery until SOC is below the configured confSOCMin
+            # check if batterySocMin was already reached 
+            if self.batterySoc.state <= self.batterySocMin.state:
+                targetCarChargePower = 0
+                self.instantUpdatePower = True
+            else:
+                # otherwise charge with eihter configured power or availablePower, considering which is bigger
+                targetCarChargePower = max(self.manualCarChargePower.state, availablePower)
+
         elif self.chargePrio.state == 5: # use power from the grid to fast charge the car
             targetCarChargePower = availablePower + 27000
             self.instantUpdatePower = True
@@ -238,9 +252,8 @@ class GoESurplusService():
                 targetCarChargePower = 0
                 self.instantUpdatePower = True
             else:
-                # otherwise charge 
-                # TODO have a configurable targetCarChargePower
-                targetCarChargePower = self.manualCarChargePower.state
+                # otherwise charge with eihter configured power or availablePower, considering which is bigger
+                targetCarChargePower = max(self.manualCarChargePower.state, availablePower)
 
             # update targetcarpoweramountfulfilled
             self.targetCarPowerAmountFulfilled.setData(newTargetCarPowerAmountFulfilled)
@@ -252,7 +265,7 @@ class GoESurplusService():
 
 
         # smoothen out targetCarChargePower for it not to flicker around, but only if difference to old targetCarChargePower is greater than 200
-        if not self.instantUpdatePower and not self.oldTargetCarChargePower.state == 0 and targetCarChargePower > 1380 and abs(targetCarChargePower-self.oldTargetCarChargePower.state) > 200:
+        if not self.instantUpdatePower and not self.oldTargetCarChargePower.state == 0 and targetCarChargePower >= 1380 and abs(targetCarChargePower-self.oldTargetCarChargePower.state) > 200:
             targetCarChargePower = round((targetCarChargePower+5*self.oldTargetCarChargePower.state)/6)
 
             
@@ -261,7 +274,7 @@ class GoESurplusService():
             if self.batterySoc.state > 95 and targetCarChargePower < self.carChargePower.state - self.globalGrid.state:
                 targetCarChargePower = self.carChargePower.state - self.globalGrid.state
             elif targetCarChargePower < self.globalGrid.state *-1:
-                targetCarChargePower = self.globalGrid.state*-1
+                targetCarChargePower = self.globalGrid.state * -1
 
         # avoid a negativ targetCarChargePower
         return targetCarChargePower if targetCarChargePower > 0 else 0
