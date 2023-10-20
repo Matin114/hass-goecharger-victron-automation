@@ -61,7 +61,7 @@ class GoESurplusService():
         self.globalGrid = VictronSensorData(hass=hass, entityId="sensor.custom_globalGrid", dataType=float)
         self.batteryPower = VictronSensorData(hass=hass, entityId="sensor.custom_batteryPower", dataType=float)
         self.batterySoc = VictronSensorData(hass=hass, entityId="sensor.custom_batterySOC", dataType=float)
-        self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_batterySOC", dataType=float, defaultData=0)
+        self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarChargePower", dataType=float, defaultData=0)
 
         # TODO calculate maxBatteryChargePower interally
         self.maxBatteryChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_maxBatteryChargePower", dataType=float)
@@ -73,9 +73,9 @@ class GoESurplusService():
 
         self.carChargePower = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_12", dataType=float)
         self.oldFrcVal = GoESensorData(hass=hass, entityId=f"select.go_echarger_{serialNumber}_frc", mqttTopic=f"{goeTopicPrefix}frc", dataType=int, stateMethod=stateFrc)
-        self.oldPsmVal = GoESensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_psm", mqttTopic=f"{goeTopicPrefix}psm", dataType=int)
+        self.oldPsmVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_psm", mqttTopic=f"{goeTopicPrefix}psm", dataType=int)
         self.totalEnergy = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_eto", dataType=float)
-        self.oldAmpVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_amp", dataType=int)
+        self.oldAmpVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_amp", mqttTopic=f"{goeTopicPrefix}amp", dataType=int)
 
         usedPhasesAdditionalData = { "powerPhaseList": [GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_5", dataType=float), 
                                     GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_6", dataType=float),
@@ -232,7 +232,7 @@ class GoESurplusService():
             if self.instantUpdatePower:
                 self.powerAmountStart = self.totalEnergy.state
 
-            newTargetCarPowerAmountFulfilled = abs(round(self.totalEnergy.state - self.powerAmountStart.state))
+            newTargetCarPowerAmountFulfilled = abs(round(self.totalEnergy.state - self.powerAmountStart))
             # check if targetCarPowerAmount was already reached 
             if newTargetCarPowerAmountFulfilled >= self.targetCarPowerAmount.state:
                 targetCarChargePower = 0

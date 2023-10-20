@@ -38,7 +38,9 @@ class SensorData():
     def setData(self, newState):
         if self.state != newState:
             self.state = newState
-            self.hass.states.set(self.entityId, str(newState))
+            # TODO maybe change custom sensors to not use MQTT
+            # for now kept the custom sensors in MQTT even if not needed
+            self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/{self.entityId.split('_',1)[1]}", newState)
             
     
 class VictronSensorData(SensorData):
@@ -49,7 +51,7 @@ class GoESensorData(SensorData):
     mqttTopic:str=None
 
     def __init__(self, hass:HomeAssistant, entityId:str, mqttTopic:str=None, dataType:type=str, defaultData=None, stateMethod=None) -> None:
-        super.__init__(self, hass, entityId, dataType, defaultData, stateMethod)
+        super().__init__(hass, entityId, dataType, defaultData, stateMethod)
         self.mqttTopic = mqttTopic
 
     def setData(self, newState):
@@ -64,7 +66,7 @@ class GoESensorData(SensorData):
 class InternalSensorData(SensorData):
 
     def __init__(self, hass:HomeAssistant, entityId:str, additionalData:dict, dataType:type=str, defaultData=None, stateMethod=None) -> None:
-        super.__init__(self, hass, entityId, dataType, defaultData, stateMethod)
+        super().__init__(hass, entityId, dataType, defaultData, stateMethod)
         self.additionalData = additionalData
 
     def retrieveData(self):
@@ -76,8 +78,6 @@ class InternalSensorData(SensorData):
         else:
             self.state = self.defaultData
 
-
-        
 
 def stateChargePrio(self: SensorData, chargePrioState: State) -> int:
     # get charge priority
