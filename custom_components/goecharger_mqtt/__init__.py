@@ -18,12 +18,7 @@ from .const import (
     ATTR_VALUE,
     DEFAULT_GOE_TOPIC_PREFIX,
     DOMAIN,
-    ATTR_VICTRON_CHARGE_PRIO,
-    ATTR_VICTRON_GLOBAL_GRID,
-    ATTR_VICTRON_BATTERY_CURRENT,
-    ATTR_VICTRON_BATTERY_POWER,
-    ATTR_VICTRON_BATTERY_VOLTAGE,
-    ATTR_VICTRON_BATTERY_SOC,
+    ATTR_VICTRON_TRIGGER_ID
 )
 
 PLATFORMS: list[str] = [
@@ -46,7 +41,11 @@ SERVICE_SCHEMA_SET_CONFIG_KEY = vol.Schema(
 )
 
 # no configuration needed/allowed
-SERVICE_SCHEMA_GOE_SURPLUS_CONTROLLER = vol.Schema({})
+SERVICE_SCHEMA_GOE_SURPLUS_CONTROLLER = vol.Schema(
+    {
+        vol.Required(ATTR_VICTRON_TRIGGER_ID): cv.string
+    }
+)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up go-eCharger (MQTT) from a config entry."""
@@ -88,7 +87,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     async def goe_surplus_controller_service(call: ServiceCall) -> None:
         surplusController = hass.data[GoESurplusService.__name__]
         if isinstance(surplusController, GoESurplusService):
-            surplusController.executeService()
+            surplusController.executeService(call.data[ATTR_VICTRON_TRIGGER_ID])
 
     hass.services.async_register(
         DOMAIN,

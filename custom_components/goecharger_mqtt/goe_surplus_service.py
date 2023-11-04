@@ -139,7 +139,7 @@ class GoESurplusService():
 
         return True
 
-    def executeService(self):
+    def executeService(self, triggerId):
         if not self.initData():
             _LOGGER.warn("Data initialization failed! Controller won't be executed!")
             return
