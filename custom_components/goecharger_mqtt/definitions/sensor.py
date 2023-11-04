@@ -224,6 +224,17 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         entity_registry_enabled_default=True,
         disabled=False,
         isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="usedPhases",
+        name="Used Phases",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=None,
+        native_unit_of_measurement=None,
+        state_class=None,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
     )
 )
 

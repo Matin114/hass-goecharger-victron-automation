@@ -28,7 +28,7 @@ class GoESurplusService():
     carChargePower: GoESensorData # (W) current power the car is charged with
     oldFrcVal: GoESensorData # value of GoE key FRC
     oldPsmVal: GoESensorData # value of GoE key PSM
-    usedPhases: InternalSensorData = 0 # (0-3) for every phase used for charging the car 
+    usedPhases: VictronSensorData # (0-3) for every phase used for charging the car 
     # conditional
     maxBatteryChargePower: VictronSensorData # (W) maximal allowed power the battery may be charged with
     batterySocMin: VictronSensorData # (%) discharge battery to this soc in Prio 4
@@ -58,6 +58,10 @@ class GoESurplusService():
         serialNumber = configEntry.data[CONF_SERIAL_NUMBER]
         goeTopicPrefix = f"{configEntry.data[CONF_GOE_TOPIC_PREFIX]}/{serialNumber}/"
 
+        usedPhasesAdditionalData = { "powerPhaseList": [GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_5", dataType=float), 
+                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_6", dataType=float),
+                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_7", dataType=float)]}
+
         self.chargePrio = VictronSensorData(hass=hass, entityId="select.custom_chargeprio", dataType=int, defaultData=-1, stateMethod=stateChargePrio)
         self.globalGrid = VictronSensorData(hass=hass, entityId="sensor.custom_globalGrid", dataType=float)
         self.batteryPower = VictronSensorData(hass=hass, entityId="sensor.custom_batteryPower", dataType=float)
@@ -72,6 +76,7 @@ class GoESurplusService():
         self.targetCarPowerAmountFulfilled = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarPowerAmountFulfilled", dataType=float, defaultData=0)
         self.frcUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_frcUpdateTimer", dataType=int)
         self.psmUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_psmUpdateTimer", dataType=int)
+        self.usedPhases = VictronSensorData(hass=hass, entityId="sensor.custom_usedPhases", stateMethod=stateUsedPhases, additionalData=usedPhasesAdditionalData)
 
         self.carChargePower = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_12", dataType=float)
         self.oldFrcVal = GoESensorData(hass=hass, entityId=f"select.go_echarger_{serialNumber}_frc", mqttTopic=f"{goeTopicPrefix}frc", dataType=int, stateMethod=stateFrc)
@@ -79,13 +84,7 @@ class GoESurplusService():
         self.totalEnergy = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_eto", dataType=float)
         self.oldAmpVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_amp", mqttTopic=f"{goeTopicPrefix}amp", dataType=int)
 
-        usedPhasesAdditionalData = { "powerPhaseList": [GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_5", dataType=float), 
-                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_6", dataType=float),
-                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_7", dataType=float)]}
-        self.usedPhases = InternalSensorData(hass=hass, entityId="goeServiceInternal.usedPhases", stateMethod=stateUsedPhases, additionalData=usedPhasesAdditionalData)
-
-
-        # these sensors are always needes, so should always be loaded
+        # these sensors are always needes,  so should always be loaded
         self.mandatorySensorList = [self.chargePrio, self.globalGrid, self.batteryPower, self.batterySoc, self.oldTargetCarChargePower, 
                                         self.carChargePower, self.oldFrcVal, self.oldPsmVal, self.usedPhases]
 
@@ -177,7 +176,7 @@ class GoESurplusService():
             if self.oldPsmVal.state != 0:
                 self.updateValueTimer("psm", psmNewVal, psmNewVal, 0)
         else:
-            frcUpdateTimer = self.updateValueTimer("frc", self.oldFrcVal.state, frcNewVal, 30)
+            frcUpdateTimer = self.updateValueTimer("frc", self.oldFrcVal.state, frcNewVal, 15)
 
             psmUpdateTimer = self.updateValueTimer("psm", self.oldPsmVal.state, psmNewVal, 30)
             # use old psm value if not changed for correct calculation of AMPs
@@ -187,7 +186,7 @@ class GoESurplusService():
         self.psmUpdateTimer.setData(psmUpdateTimer)
     
 
-        ampNewVal = self.calcAmpNewVal(targetCarChargePower, psmNewVal)
+        ampNewVal = self.calcAmpNewVal(round(targetCarChargePower, 0), psmNewVal)
 
         # update amp
         self.oldAmpVal.setData(ampNewVal)

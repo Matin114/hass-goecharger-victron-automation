@@ -116,7 +116,7 @@ def stateUsedPhases(self: SensorData):
             wasSuccessful
             break
         else:
-            # add one used phase if there is power on the phase
-            usedPhases += 1 if powerPhase.state > 0 else 0
+            # add one used phase if there is power on the phase (above 500W since some minor power may always be existant)
+            usedPhases += 1 if powerPhase.state > 500 else 0
 
     return wasSuccessful, usedPhases
