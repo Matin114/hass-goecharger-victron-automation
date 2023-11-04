@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta, datetime
-import pytz
+import json
 
 from homeassistant.core import HomeAssistant
 from homeassistant.components import mqtt
@@ -70,7 +70,7 @@ class GoESurplusService():
         self.batteryPower = VictronSensorData(hass=hass, entityId="sensor.custom_batteryPower", dataType=float)
         self.batterySoc = VictronSensorData(hass=hass, entityId="sensor.custom_batterySOC", dataType=float)
         self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarChargePower", dataType=float, defaultData=1)
-        self.oldAmpVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_amp", mqttTopic=f"{goeTopicPrefix}amp", dataType=int, defaultData=0)
+        self.oldAmpVal = GoESensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_amp", mqttTopic=f"{goeTopicPrefix}amp", dataType=int, defaultData=0)
         self.ledBrightness = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_lbr", mqttTopic=f"{goeTopicPrefix}lbr", dataType=int, defaultData=0)
         self.colorCharging = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cch", mqttTopic=f"{goeTopicPrefix}cch", dataType=int, defaultData=65793)
         self.colorIdle = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cid", mqttTopic=f"{goeTopicPrefix}cid", dataType=int, defaultData=65793)
@@ -117,7 +117,7 @@ class GoESurplusService():
         elif triggerId == "buttonPressed":
             self.instantUpdatePower = True
             # cycle through priorities
-            newPrio = 0 # 0 equals OFF, so turn off if cycled through all priorities
+            newPrio = "0" # 0 equals OFF, so turn off if cycled through all priorities
             for key, priority in CONST_VICTRON_CHARGE_PRIOS.items():
                 # try to get prio with higher key
                 if key <= self.chargePrio.state:
@@ -372,5 +372,5 @@ class GoESurplusService():
         self.ledBrightness.setData(255)
         self.valueChangeAllower["ledBrightness"] = datetime.now()+timedelta(seconds=5)
         # update colors
-        self.colorCharging.setData(CONST_VICTRON_CHARGE_PRIOS[chargePrio]["color"])
-        self.colorIdle.setData(CONST_VICTRON_CHARGE_PRIOS[chargePrio]["color"])
+        self.colorCharging.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["color"]))
+        self.colorIdle.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["color"]))
