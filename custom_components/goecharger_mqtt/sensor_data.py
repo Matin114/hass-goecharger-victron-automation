@@ -87,7 +87,7 @@ def stateChargePrio(self: SensorData, chargePrioState: State) -> [int, bool]:
     # get charge priority
     returnVal = -1
     for key, description in CONST_VICTRON_CHARGE_PRIOS.items():
-        if chargePrioState.state == description:
+        if chargePrioState.state == description["name"]:
             returnVal = self.dataType(key)
             break
     if returnVal == -1:

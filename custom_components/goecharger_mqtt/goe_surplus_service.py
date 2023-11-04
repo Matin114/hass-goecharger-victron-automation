@@ -29,6 +29,10 @@ class GoESurplusService():
     oldFrcVal: GoESensorData # value of GoE key FRC
     oldPsmVal: GoESensorData # value of GoE key PSM
     usedPhases: VictronSensorData # (0-3) for every phase used for charging the car 
+    oldAmpVal: GoESensorData # value of GoE key AMP
+    ledBrightness: GoESensorData # color of LEDs when charging
+    colorCharging: GoESensorData # color of LEDs when charging
+    colorIdle: GoESensorData # color of LEDs when idle (not charging, but not finished)
     # conditional
     maxBatteryChargePower: VictronSensorData # (W) maximal allowed power the battery may be charged with
     batterySocMin: VictronSensorData # (%) discharge battery to this soc in Prio 4
@@ -39,13 +43,12 @@ class GoESurplusService():
 
     frcUpdateTimer: VictronSensorData # a timer showing when frc will be updated
     psmUpdateTimer: VictronSensorData # a timer showing when frc will be updated
-    oldAmpVal: GoESensorData # value of GoE key AMP
 
     powerAmountStart: float # (Wh) power at start of prio where car gets charged with a given amount of Wh
 
     instantUpdatePower: bool = False # (bool) if chargePrio changes or some prios are selected the chargePower should change instantly
     mandatorySensorList:list[SensorData]
-    valueChangeAllower = {} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
+    valueChangeAllower = {"ledBrightness" : datetime.now()} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
 
     def __init__(
         self,
@@ -67,6 +70,10 @@ class GoESurplusService():
         self.batteryPower = VictronSensorData(hass=hass, entityId="sensor.custom_batteryPower", dataType=float)
         self.batterySoc = VictronSensorData(hass=hass, entityId="sensor.custom_batterySOC", dataType=float)
         self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarChargePower", dataType=float, defaultData=1)
+        self.oldAmpVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_amp", mqttTopic=f"{goeTopicPrefix}amp", dataType=int, defaultData=0)
+        self.ledBrightness = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_lbr", mqttTopic=f"{goeTopicPrefix}lbr", dataType=int, defaultData=0)
+        self.colorCharging = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cch", mqttTopic=f"{goeTopicPrefix}cch", dataType=int, defaultData=65793)
+        self.colorIdle = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cid", mqttTopic=f"{goeTopicPrefix}cid", dataType=int, defaultData=65793)
 
         # TODO calculate maxBatteryChargePower interally
         self.maxBatteryChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_maxBatteryChargePower", dataType=float)
@@ -82,14 +89,14 @@ class GoESurplusService():
         self.oldFrcVal = GoESensorData(hass=hass, entityId=f"select.go_echarger_{serialNumber}_frc", mqttTopic=f"{goeTopicPrefix}frc", dataType=int, stateMethod=stateFrc)
         self.oldPsmVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_psm", mqttTopic=f"{goeTopicPrefix}psm", dataType=int)
         self.totalEnergy = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_eto", dataType=float)
-        self.oldAmpVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_amp", mqttTopic=f"{goeTopicPrefix}amp", dataType=int)
 
         # these sensors are always needes,  so should always be loaded
         self.mandatorySensorList = [self.chargePrio, self.globalGrid, self.batteryPower, self.batterySoc, self.oldTargetCarChargePower, 
-                                        self.carChargePower, self.oldFrcVal, self.oldPsmVal, self.usedPhases]
+                                        self.carChargePower, self.oldFrcVal, self.oldPsmVal, self.usedPhases, self.oldAmpVal, 
+                                        self.colorCharging, self.colorIdle, self.ledBrightness]
 
 
-    def initData(self) -> bool:
+    def initData(self, triggerId) -> bool:
         """returns True if data initialization was successful, otherwise False"""
         unavailableSensorList = []
 
@@ -103,8 +110,34 @@ class GoESurplusService():
             _LOGGER.warn(f"Following MANDATORY fields couldn't be retrieved {unavailableSensorList}!\nCanceling charger calculations!")
             return False
 
-        # if new prio was selected always instat update all fields
-        self.instantUpdatePower = True if self.chargePrio.additionalData["last_changed"] > datetime.now(pytz.UTC)-timedelta(seconds=1) else False
+        # look at the triggerId to find out how the service was called
+        if triggerId == "prioChanged":
+            self.instantUpdatePower = True
+            self.updateLedColor(self.chargePrio.state)
+        elif triggerId == "buttonPressed":
+            self.instantUpdatePower = True
+            # cycle through priorities
+            newPrio = 0 # 0 equals OFF, so turn off if cycled through all priorities
+            for key, priority in CONST_VICTRON_CHARGE_PRIOS.items():
+                # try to get prio with higher key
+                if key <= self.chargePrio.state:
+                    continue
+                # if it is possible to select this priority using the button, do so
+                if priority["buttonAccess"]:
+                    newPrio = key
+                    break
+            self.chargePrio.setData(CONST_VICTRON_CHARGE_PRIOS[newPrio]["name"])
+            self.chargePrio.state = newPrio
+
+            self.updateLedColor(self.chargePrio.state)
+        elif triggerId == "timeTrigger":
+            # TODO change brightness to configurable default brightness instead of 100
+            # reset ledBrightness
+            changeAllowedTime = self.valueChangeAllower["ledBrightness"]
+            if datetime.now() >= changeAllowedTime:
+                self.ledBrightness.setData(100)
+            
+
         
         conditionalSensorList:list[SensorData] = []
 
@@ -140,7 +173,7 @@ class GoESurplusService():
         return True
 
     def executeService(self, triggerId):
-        if not self.initData():
+        if not self.initData(triggerId):
             _LOGGER.warn("Data initialization failed! Controller won't be executed!")
             return
         
@@ -333,3 +366,11 @@ class GoESurplusService():
             ampNewVal = 32
 
         return ampNewVal
+    
+    def updateLedColor(self, chargePrio:int):
+        # max brightness for 5 sec for better viewing
+        self.ledBrightness.setData(255)
+        self.valueChangeAllower["ledBrightness"] = datetime.now()+timedelta(seconds=5)
+        # update colors
+        self.colorCharging.setData(CONST_VICTRON_CHARGE_PRIOS[chargePrio]["color"])
+        self.colorIdle.setData(CONST_VICTRON_CHARGE_PRIOS[chargePrio]["color"])

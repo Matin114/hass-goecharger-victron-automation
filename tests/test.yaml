@@ -14,6 +14,10 @@ trigger:
     entity_id:
       - select.custom_chargeprio
     id: prioChanged
+  - platform: state
+    entity_id:
+      - sensor.go_echarger_217953_lbp
+    id: buttonPressed
   - platform: time_pattern
     seconds: /5
     id: timeTrigger
@@ -21,3 +25,5 @@ trigger:
 
 action:
   - service: goecharger_mqtt.goe_surplus_controller
+    data:
+      triggerId: "{{trigger.id}}"

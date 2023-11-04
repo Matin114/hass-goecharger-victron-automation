@@ -92,3 +92,11 @@ set_config_key:
 goe_surplus_controller:
   name: GO-E Charger surplus controller
   description: This service calculates depending on the chargePriority a the power, the GO-E charger may use
+  fields:
+    triggerId:
+      name: Trigger ID
+      description: This is only needed for the automation
+      required: true
+      default: "manual"
+      selector:
+        text:
