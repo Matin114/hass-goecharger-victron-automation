@@ -19,32 +19,36 @@ class SensorData():
     state: Any | None = None
     additionalData: dict | None = None
 
-    def __init__(self, hass:HomeAssistant, entityId:str, dataType:type=str, defaultData=None, stateMethod=None) -> None:
+    def __init__(self, hass:HomeAssistant, entityId:str, dataType:type=str, defaultData=None, stateMethod=None, additionalData:dict={}) -> None:
         self.hass = hass
         self.entityId = entityId
         self.dataType = dataType
         self.defaultData = defaultData
         self.stateMethod = stateMethod
-        self.additionalData = {}
+        self.additionalData = additionalData
 
     def retrieveData(self):
-        try:
-            curState = self.hass.states.get(self.entityId)
-            # get state, but use stateMethod if one exists
-            self.state = self.dataType(curState.state) if self.stateMethod == None else self.stateMethod(self, curState)
-        except ValueError:
-            self.state = self.defaultData
-        
+        curState = self.hass.states.get(self.entityId)
+        # get state, but use stateMethod if one exists
+        if self.stateMethod != None:
+            stateMethodData = self.stateMethod(self, curState)
+            # set state to data generated in stateMethod, if it was successful, otherwise defaultData 
+            self.state = stateMethodData[0] if stateMethodData[1] else self.defaultData
+        else:
+            try:
+                self.state = self.dataType(curState.state)
+            except ValueError:
+                self.state = self.defaultData
+
+            
+class VictronSensorData(SensorData):
+
     def setData(self, newState):
         if self.state != newState:
             self.state = newState
             # TODO maybe change custom sensors to not use MQTT
             # for now kept the custom sensors in MQTT even if not needed
             self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/{self.entityId.split('_',1)[1]}", newState)
-            
-    
-class VictronSensorData(SensorData):
-    pass
 
 class GoESensorData(SensorData):
     
@@ -79,7 +83,7 @@ class InternalSensorData(SensorData):
             self.state = self.defaultData
 
 
-def stateChargePrio(self: SensorData, chargePrioState: State) -> int:
+def stateChargePrio(self: SensorData, chargePrioState: State) -> [int, bool]:
     # get charge priority
     returnVal = -1
     for key, description in CONST_VICTRON_CHARGE_PRIOS.items():
@@ -91,9 +95,10 @@ def stateChargePrio(self: SensorData, chargePrioState: State) -> int:
         _LOGGER.warn(f"Charger was turned off! Reason: Configured chargePrio is not know to the controller, but is: {chargePrioState.state}")
     # last_changed is needed for instantUpdate in goe_surplus_service
     self.additionalData["last_changed"] = chargePrioState.last_changed
-    return returnVal
+    # value, wasSuccessful (ChargePrio is always successful, because it'll just turn off)
+    return returnVal, True
 
-def stateFrc(self: SensorData, frcState: State) -> int:
+def stateFrc(self: SensorData, frcState: State) -> [int, bool]:
     """Get frc data since it is mapped to strings"""
     frcPossibleStateDict: dict[int, str] = getattr(GoEChargerStatusCodes, "frc")
     frcValue = None
@@ -101,10 +106,11 @@ def stateFrc(self: SensorData, frcState: State) -> int:
     for code, description in frcPossibleStateDict.items():
         if description == frcState.state:
             frcValue = code
-    
-    return frcValue
 
-def stateUsedPhases(self: SensorData):
+    # value, wasSuccessful
+    return frcValue, frcValue != None
+
+def stateUsedPhases(self: VictronSensorData, unused) -> [int, bool]:
     wasSuccessful = True
     usedPhases = 0
     powerPhaseList:list[GoESensorData] = self.additionalData["powerPhaseList"]
@@ -118,5 +124,8 @@ def stateUsedPhases(self: SensorData):
         else:
             # add one used phase if there is power on the phase (above 500W since some minor power may always be existant)
             usedPhases += 1 if powerPhase.state > 500 else 0
-
-    return wasSuccessful, usedPhases
+    # publish the usedPhases
+    if wasSuccessful:
+        self.setData(usedPhases)
+    # value, wasSuccessful
+    return usedPhases, wasSuccessful
