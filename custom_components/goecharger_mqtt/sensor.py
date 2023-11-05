@@ -73,6 +73,9 @@ class GoEChargerSensor(GoEChargerEntity, SensorEntity):
 
         self.entity_description = description
 
+        if self.entity_description.isVictron:
+            self._attr_native_value = 0
+
     @property
     def available(self):
         """Return True if entity is available."""

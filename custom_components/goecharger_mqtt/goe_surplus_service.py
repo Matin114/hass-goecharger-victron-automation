@@ -115,21 +115,21 @@ class GoESurplusService():
             self.instantUpdatePower = True
             self.updateLedColor(self.chargePrio.state)
         elif triggerId == "buttonPressed":
-            self.instantUpdatePower = True
             # cycle through priorities
             newPrio = "0" # 0 equals OFF, so turn off if cycled through all priorities
             for key, priority in CONST_VICTRON_CHARGE_PRIOS.items():
                 # try to get prio with higher key
-                if key <= self.chargePrio.state:
+                if int(key) <= self.chargePrio.state:
                     continue
                 # if it is possible to select this priority using the button, do so
                 if priority["buttonAccess"]:
                     newPrio = key
                     break
             self.chargePrio.setData(CONST_VICTRON_CHARGE_PRIOS[newPrio]["name"])
-            self.chargePrio.state = newPrio
+            self.chargePrio.state = int(newPrio)
 
             self.updateLedColor(self.chargePrio.state)
+            return False
         elif triggerId == "timeTrigger":
             # TODO change brightness to configurable default brightness instead of 100
             # reset ledBrightness
@@ -174,6 +174,9 @@ class GoESurplusService():
 
     def executeService(self, triggerId):
         if not self.initData(triggerId):
+            # if button was pressed, the priority will change so the service will be called again in a few ms
+            if triggerId == "buttonPressed":
+                return
             _LOGGER.warn("Data initialization failed! Controller won't be executed!")
             return
         

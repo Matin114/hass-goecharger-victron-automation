@@ -17,7 +17,8 @@ class SensorData():
     defaultData: Any | None
     stateMethod: Callable | None # Method that is called when gathering the state of this entity
     state: Any | None = None
-    additionalData: dict | None = None
+    additionalData: dict | None = None # data that can be used in the stateMethod
+    attributes: dict | None = None # attributes of the sensor, needed to update it
 
     def __init__(self, hass:HomeAssistant, entityId:str, dataType:type=str, defaultData=None, stateMethod=None, additionalData:dict={}) -> None:
         self.hass = hass
@@ -29,6 +30,11 @@ class SensorData():
 
     def retrieveData(self):
         curState = self.hass.states.get(self.entityId)
+        
+        # set attributes if needed
+        if self.attributes == None and curState.attributes != None:
+            self.attributes = curState.attributes
+
         # get state, but use stateMethod if one exists
         if self.stateMethod != None:
             stateMethodData = self.stateMethod(self, curState)
@@ -46,9 +52,11 @@ class VictronSensorData(SensorData):
     def setData(self, newState):
         if self.state != newState:
             self.state = newState
-            # TODO maybe change custom sensors to not use MQTT
-            # for now kept the custom sensors in MQTT even if not needed
-            self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/{self.entityId.split('_',1)[1]}", newState)
+            if self.attributes != None:
+                self.hass.states.async_set(self.entityId, newState, self.attributes) 
+            
+            # old way to change sensor data using mqtt
+            #self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/{self.entityId.split('_',1)[1]}", newState)
 
 class GoESensorData(SensorData):
     
