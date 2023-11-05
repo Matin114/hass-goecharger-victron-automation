@@ -48,7 +48,7 @@ class GoESurplusService():
 
     instantUpdatePower: bool = False # (bool) if chargePrio changes or some prios are selected the chargePower should change instantly
     mandatorySensorList:list[SensorData]
-    valueChangeAllower = {"ledBrightness" : datetime.now()} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
+    valueChangeAllower = {"buttonActive" : datetime.now()} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
 
     def __init__(
         self,
@@ -115,26 +115,30 @@ class GoESurplusService():
             self.instantUpdatePower = True
             self.updateLedColor(self.chargePrio.state)
         elif triggerId == "buttonPressed":
-            # cycle through priorities
-            newPrio = "0" # 0 equals OFF, so turn off if cycled through all priorities
-            for key, priority in CONST_VICTRON_CHARGE_PRIOS.items():
-                # try to get prio with higher key
-                if int(key) <= self.chargePrio.state:
-                    continue
-                # if it is possible to select this priority using the button, do so
-                if priority["buttonAccess"]:
-                    newPrio = key
-                    break
-            self.chargePrio.setData(CONST_VICTRON_CHARGE_PRIOS[newPrio]["name"])
-            self.chargePrio.state = int(newPrio)
+            # on first button press, it should only be activated and shown to the user, which priority is active
+            # if pressed within a certain time it will cycle through priorities
+
+            # if ledBrightness is max, we consider the button active
+            if self.ledBrightness.state == 255:
+                # cycle through priorities
+                newPrio = "0" # 0 equals OFF, so turn off if cycled through all priorities
+                for key, priority in CONST_VICTRON_CHARGE_PRIOS.items():
+                    # try to get prio with higher key
+                    if int(key) <= self.chargePrio.state:
+                        continue
+                    # if it is possible to select this priority using the button, do so
+                    if priority["buttonAccess"]:
+                        newPrio = key
+                        break
+                self.chargePrio.setData(CONST_VICTRON_CHARGE_PRIOS[newPrio]["name"])
+                self.chargePrio.state = int(newPrio)
 
             self.updateLedColor(self.chargePrio.state)
             return False
         elif triggerId == "timeTrigger":
             # TODO change brightness to configurable default brightness instead of 100
-            # reset ledBrightness
-            changeAllowedTime = self.valueChangeAllower["ledBrightness"]
-            if datetime.now() >= changeAllowedTime:
+            # reset ledBrightness when button isn't active anymore
+            if datetime.now() >= self.valueChangeAllower["buttonActive"]:
                 self.ledBrightness.setData(100)
             
 
@@ -373,7 +377,7 @@ class GoESurplusService():
     def updateLedColor(self, chargePrio:int):
         # max brightness for 5 sec for better viewing
         self.ledBrightness.setData(255)
-        self.valueChangeAllower["ledBrightness"] = datetime.now()+timedelta(seconds=5)
+        self.valueChangeAllower["buttonActive"] = datetime.now()+timedelta(seconds=10)
         # update colors
         self.colorCharging.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["color"]))
         self.colorIdle.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["color"]))
