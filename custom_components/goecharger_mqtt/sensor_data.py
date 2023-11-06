@@ -127,7 +127,7 @@ def stateUsedPhases(self: VictronSensorData, unused) -> [int, bool]:
         powerPhase.retrieveData()
         if powerPhase.state == None:
             # if state is None, data couldn't be retrieved, so cancel
-            wasSuccessful
+            wasSuccessful = False
             break
         else:
             # add one used phase if there is power on the phase (above 500W since some minor power may always be existant)

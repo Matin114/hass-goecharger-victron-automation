@@ -61,9 +61,9 @@ class GoESurplusService():
         serialNumber = configEntry.data[CONF_SERIAL_NUMBER]
         goeTopicPrefix = f"{configEntry.data[CONF_GOE_TOPIC_PREFIX]}/{serialNumber}/"
 
-        usedPhasesAdditionalData = { "powerPhaseList": [GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_5", dataType=float), 
-                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_6", dataType=float),
-                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_7", dataType=float)]}
+        usedPhasesAdditionalData = { "powerPhaseList": [GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_7", dataType=float), 
+                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_8", dataType=float),
+                                    GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_9", dataType=float)]}
 
         self.chargePrio = VictronSensorData(hass=hass, entityId="select.custom_chargeprio", dataType=int, defaultData=-1, stateMethod=stateChargePrio)
         self.globalGrid = VictronSensorData(hass=hass, entityId="sensor.custom_globalGrid", dataType=float)
