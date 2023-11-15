@@ -98,6 +98,7 @@ class GoESurplusService():
 
     def initData(self, triggerId) -> bool:
         """returns True if data initialization was successful, otherwise False"""
+        self.instantUpdatePower = False
         unavailableSensorList = []
 
         for sensor in self.mandatorySensorList:
