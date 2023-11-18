@@ -33,6 +33,8 @@ class GoESurplusService():
     ledBrightness: GoESensorData # color of LEDs when charging
     colorCharging: GoESensorData # color of LEDs when charging
     colorIdle: GoESensorData # color of LEDs when idle (not charging, but not finished)
+    frcUpdateTimer: VictronSensorData # a timer showing when frc will be updated
+    psmUpdateTimer: VictronSensorData # a timer showing when psm will be updated
     # conditional
     maxBatteryChargePower: VictronSensorData # (W) maximal allowed power the battery may be charged with
     batterySocMin: VictronSensorData # (%) discharge battery to this soc in Prio 4
@@ -41,12 +43,11 @@ class GoESurplusService():
     targetCarPowerAmountFulfilled: VictronSensorData # (Wh) power already charged in prio 8
     totalEnergy: GoESensorData # (Wh) total power ever charged with the wallbox
 
-    frcUpdateTimer: VictronSensorData # a timer showing when frc will be updated
-    psmUpdateTimer: VictronSensorData # a timer showing when frc will be updated
 
     powerAmountStart: float # (Wh) power at start of prio where car gets charged with a given amount of Wh
 
     instantUpdatePower: bool = False # (bool) if chargePrio changes or some prios are selected the chargePower should change instantly
+    batteryHasReachedDischargeSOC = False
     mandatorySensorList:list[SensorData]
     valueChangeAllower = {"buttonActive" : datetime.now()} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
 
@@ -93,7 +94,7 @@ class GoESurplusService():
         # these sensors are always needes,  so should always be loaded
         self.mandatorySensorList = [self.chargePrio, self.globalGrid, self.batteryPower, self.batterySoc, self.oldTargetCarChargePower, 
                                         self.carChargePower, self.oldFrcVal, self.oldPsmVal, self.usedPhases, self.oldAmpVal, 
-                                        self.colorCharging, self.colorIdle, self.ledBrightness]
+                                        self.colorCharging, self.colorIdle, self.ledBrightness, self.frcUpdateTimer, self.psmUpdateTimer]
 
 
     def initData(self, triggerId) -> bool:
@@ -158,6 +159,7 @@ class GoESurplusService():
             conditionalSensorList.append(self.targetCarPowerAmount)
             conditionalSensorList.append(self.targetCarPowerAmountFulfilled)
             conditionalSensorList.append(self.totalEnergy)
+            conditionalSensorList.append(self.maxBatteryChargePower)
 
         for sensor in conditionalSensorList:
             sensor.retrieveData()
@@ -185,7 +187,7 @@ class GoESurplusService():
             _LOGGER.warn("Data initialization failed! Controller won't be executed!")
             return
         
-        targetCarChargePower = self.calcTargetCarChargePower()
+        targetCarChargePower = round(self.calcTargetCarChargePower(), 0)
 
         # check if charging is allowed
         if targetCarChargePower < 1380:
@@ -227,7 +229,7 @@ class GoESurplusService():
         self.psmUpdateTimer.setData(psmUpdateTimer)
     
 
-        ampNewVal = self.calcAmpNewVal(round(targetCarChargePower, 0), psmNewVal)
+        ampNewVal = self.calcAmpNewVal(targetCarChargePower, psmNewVal)
 
         # update amp
         self.oldAmpVal.setData(ampNewVal)
@@ -278,7 +280,7 @@ class GoESurplusService():
         elif self.chargePrio.state == 5: # use power from the grid to fast charge the car
             targetCarChargePower = availablePower + 27000
             self.instantUpdatePower = True
-        elif self.chargePrio.state == 6:
+        elif self.chargePrio.state == 6: # charge with the configured power from manualCarChargePower
             targetCarChargePower = self.manualCarChargePower.state
             self.instantUpdatePower = True
         elif self.chargePrio.state == 8: # charge car with a given amount of Wh
@@ -292,12 +294,11 @@ class GoESurplusService():
                 targetCarChargePower = 0
                 self.instantUpdatePower = True
             else:
-                # otherwise charge with eihter configured power or availablePower, considering which is bigger
-                targetCarChargePower = max(self.manualCarChargePower.state, availablePower)
+                # otherwise charge with either configured power or availablePower - maxBatteryChargePower, considering which is bigger
+                targetCarChargePower = max(self.manualCarChargePower.state, availablePower - self.maxBatteryChargePower.state)
 
             # update targetcarpoweramountfulfilled
             self.targetCarPowerAmountFulfilled.setData(newTargetCarPowerAmountFulfilled)
-
 
         else: # either OFF or unknown chargePrio
             targetCarChargePower = 0
@@ -307,14 +308,6 @@ class GoESurplusService():
         # smoothen out targetCarChargePower for it not to flicker around, but only if difference to old targetCarChargePower is greater than 200
         if not self.instantUpdatePower and not self.oldTargetCarChargePower.state == 0 and targetCarChargePower >= 1380 and abs(targetCarChargePower-self.oldTargetCarChargePower.state) > 200:
             targetCarChargePower = round((targetCarChargePower+5*self.oldTargetCarChargePower.state)/6)
-
-            
-        # avoid feeding the grid with more power than is being charged
-        if self.chargePrio.state > 0:
-            if self.batterySoc.state > 95 and targetCarChargePower < self.carChargePower.state - self.globalGrid.state:
-                targetCarChargePower = self.carChargePower.state - self.globalGrid.state
-            elif targetCarChargePower < self.globalGrid.state *-1:
-                targetCarChargePower = self.globalGrid.state * -1
 
         # avoid a negativ targetCarChargePower
         return targetCarChargePower if targetCarChargePower > 0 else 0
@@ -356,13 +349,16 @@ class GoESurplusService():
         ampNewVal = int(ampNewVal)
 
         # enable discharging battery for priority 2 & 3 (prioritize battery & 50/50) 
-        # IF battery is already charged up to 95% AND feeding the grid with more than 300W
-        if self.chargePrio.state in [2,3] and self.batterySoc.state >= 95 and self.globalGrid.state < -300:
+        # IF (battery is already charged up to 97% OR has reached it before and is still above 95%) AND feeding the grid with more than 300W
+        if self.chargePrio.state in [2,3,4,6,7,8] and (self.batterySoc.state >= 97 or self.batteryHasReachedDischargeSOC) and self.globalGrid.state < -300:
             if ampNewVal < 6:
                 ampNewVal = 6
             else:
                 ampNewVal += 1
 
+            # set batteryHasReachedDischargeSOC to True if SOC has reached 97 and is between 97 and 95
+            # set it to False if it has dropped to 95
+            self.batteryHasReachedDischargeSOC = False if self.batterySoc.state <= 95 else True
 
         if ampNewVal < 6:
             ampNewVal = 6
