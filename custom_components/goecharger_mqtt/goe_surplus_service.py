@@ -116,6 +116,9 @@ class GoESurplusService():
         if triggerId == "prioChanged":
             self.instantUpdatePower = True
             self.updateLedColor(self.chargePrio.state)
+            
+            # reset targetCarPowerAmountFulfilled for Prio 8
+            self.targetCarPowerAmountFulfilled.setData(0)
         elif triggerId == "buttonPressed":
             # on first button press, it should only be activated and shown to the user, which priority is active
             # if pressed within a certain time it will cycle through priorities
@@ -171,12 +174,6 @@ class GoESurplusService():
             _LOGGER.warn(f"Following CONDITIONAL fields couldn't be retrieved {unavailableSensorList}!\nCanceling charger calculations!")
             return False
 
-
-        if self.instantUpdatePower:
-            # reset targetCarPowerAmountFulfilled for Prio 8
-            self.targetCarPowerAmountFulfilled.setData(0)
-
-
         return True
 
     def executeService(self, triggerId):
@@ -189,14 +186,6 @@ class GoESurplusService():
         
         targetCarChargePower = round(self.calcTargetCarChargePower(), 0)
 
-        # check if charging is allowed
-        if targetCarChargePower < 1380:
-            # charging disabled
-            frcNewVal = 1
-        else:
-            # charging enabled
-            frcNewVal = 2
-        
         # decide between single phase and multiphase
         if targetCarChargePower <= 4140:
             # if charging via two phases check with 3680 (2*230V*8A) 
@@ -209,27 +198,23 @@ class GoESurplusService():
         else:
             psmNewVal = 2
 
-        # wait for some fields for a certain time not to swap them to often. e.g. psm, since changing phase modes takes a little time and might jump arround
-        frcUpdateTimer = 0
-        psmUpdateTimer = 0
-        if self.instantUpdatePower:
-            # if instantUpdate is set, reset all update timers
-            if self.oldFrcVal.state != 0:
-                self.updateValueTimer("frc", frcNewVal, frcNewVal, 0)
-            if self.oldPsmVal.state != 0:
-                self.updateValueTimer("psm", psmNewVal, psmNewVal, 0)
-        else:
-            frcUpdateTimer = self.updateValueTimer("frc", self.oldFrcVal.state, frcNewVal, 15)
-
-            psmUpdateTimer = self.updateValueTimer("psm", self.oldPsmVal.state, psmNewVal, 30)
-            # use old psm value if not changed for correct calculation of AMPs
-            psmNewVal = self.oldPsmVal.state if psmUpdateTimer != 0 else psmNewVal
-
-        self.frcUpdateTimer.setData(frcUpdateTimer)
+        # use timer to decide wheter psm should be updated or not, to prevent switching psm to often
+        psmUpdateTimer, psmNewVal = self.updateValueTimer("psm", self.oldPsmVal.state, psmNewVal, 30)
         self.psmUpdateTimer.setData(psmUpdateTimer)
     
+        ampNewVal, targetCarChargePower = self.calcAmpNewVal(targetCarChargePower, psmNewVal)       
+       
+        # check if charging is allowed
+        if targetCarChargePower < 1380:
+            # charging disabled
+            frcNewVal = 1
+        else:
+            # charging enabled
+            frcNewVal = 2
 
-        ampNewVal = self.calcAmpNewVal(targetCarChargePower, psmNewVal)
+        # use timer to decide wheter frc should be updated or not, to prevent switching frc to often
+        frcUpdateTimer, frcNewVal = self.updateValueTimer("frc", self.oldFrcVal.state, frcNewVal, 15)
+        self.frcUpdateTimer.setData(frcUpdateTimer)
 
         # update amp
         self.oldAmpVal.setData(ampNewVal)
@@ -307,7 +292,7 @@ class GoESurplusService():
 
         # smoothen out targetCarChargePower for it not to flicker around, but only if difference to old targetCarChargePower is greater than 200
         if not self.instantUpdatePower and not self.oldTargetCarChargePower.state == 0 and targetCarChargePower >= 1380 and abs(targetCarChargePower-self.oldTargetCarChargePower.state) > 200:
-            targetCarChargePower = round((targetCarChargePower+5*self.oldTargetCarChargePower.state)/6)
+            targetCarChargePower = round((targetCarChargePower + 5*self.oldTargetCarChargePower.state)/6)
 
         # avoid a negativ targetCarChargePower
         return targetCarChargePower if targetCarChargePower > 0 else 0
@@ -315,26 +300,32 @@ class GoESurplusService():
     def updateValueTimer(self, valName:str, oldVal, newVal, timeout: int) -> int:
         """This method is responsible for values that change after a certain time.
         If oldVal and newVal become the same the change timer is stopped and resets"""
-        if oldVal == newVal:
-            # values are equal, so reset timer
+        # by default return -1, in case of error, the value gets not updated
+        updateTimer = -1
+        if oldVal == newVal or self.instantUpdatePower:
+            # values are equal or instantUpdatePower is set, so reset timer
             self.valueChangeAllower.pop(valName, None)
+            updateTimer = 0
         else:
             now = datetime.now()
             if valName not in self.valueChangeAllower:
                 # first occurance of the values differing: register the valueChangeRequest
                 self.valueChangeAllower[valName] = now+timedelta(seconds=timeout)
-                return timeout
+                updateTimer = timeout
             else:
                 # check if time of valueChangeRequest was reached
                 changeAllowedTime = self.valueChangeAllower[valName]
                 if now >= changeAllowedTime:
-                    return 0
+                    updateTimer = 0
                 else:
                     delta: timedelta = changeAllowedTime-now
-                    return int(round(delta.total_seconds()))
+                    updateTimer = int(round(delta.total_seconds()))
         
-        return -1
-
+        # keep working with the oldVal, since no update is allowed
+        if updateTimer != 0:
+            newVal = oldVal
+        
+        return updateTimer, newVal
 
     def calcAmpNewVal(self, targetCarChargePower, psm):
         """calculate charging AMPs"""
@@ -356,6 +347,16 @@ class GoESurplusService():
             else:
                 ampNewVal += 1
 
+            # calculate new targetCarChargePower, since the amp value has increased
+            if psm == 1:
+                targetCarChargePower = ampNewVal*230
+            else:
+            # calculate two phase charging
+                targetCarChargePower = ampNewVal*230*2
+                if self.usedPhases.state == 3:
+                    targetCarChargePower = ampNewVal*400*1.73
+
+
             # set batteryHasReachedDischargeSOC to True if SOC has reached 97 and is between 97 and 95
             # set it to False if it has dropped to 95
             self.batteryHasReachedDischargeSOC = False if self.batterySoc.state <= 95 else True
@@ -369,7 +370,7 @@ class GoESurplusService():
             # multi phase charging allowes max 32A
             ampNewVal = 32
 
-        return ampNewVal
+        return ampNewVal, targetCarChargePower
     
     def updateLedColor(self, chargePrio:int):
         # max brightness for 5 sec for better viewing
