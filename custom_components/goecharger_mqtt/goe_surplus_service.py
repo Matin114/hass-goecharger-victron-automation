@@ -118,7 +118,8 @@ class GoESurplusService():
             self.updateLedColor(self.chargePrio.state)
             
             # reset targetCarPowerAmountFulfilled for Prio 8
-            self.targetCarPowerAmountFulfilled.setData(0)
+            if self.chargePrio.state == 8:
+                self.targetCarPowerAmountFulfilled.setData(0)
         elif triggerId == "buttonPressed":
             # on first button press, it should only be activated and shown to the user, which priority is active
             # if pressed within a certain time it will cycle through priorities
