@@ -55,12 +55,12 @@ async def async_setup_entry(
         GoEChargerSensor(config_entry, description)
         for description in GOE_SENSORS+VICTRON_SENSORS_MQTT
         if not description.disabled
-        +
+    )
+    async_add_entities(
         VictronSensor(config_entry, description)
         for description in VICTRON_SENSORS
         if not description.disabled
     )
-
 
 class GoEChargerSensor(GoEChargerEntity, SensorEntity):
     """Representation of a go-eCharger sensor that is updated via MQTT."""
