@@ -6,7 +6,7 @@ from homeassistant.components import mqtt
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import callback
 
-from .definitions.sensor import GOE_SENSORS, VICTRON_SENSORS, GoEChargerSensorEntityDescription
+from .definitions.sensor import GOE_SENSORS, VICTRON_SENSORS, VICTRON_SENSORS_MQTT, GoEChargerSensorEntityDescription
 from .entity import GoEChargerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -53,7 +53,11 @@ async def async_setup_entry(
 
     async_add_entities(
         GoEChargerSensor(config_entry, description)
-        for description in GOE_SENSORS+VICTRON_SENSORS
+        for description in GOE_SENSORS+VICTRON_SENSORS_MQTT
+        if not description.disabled
+        +
+        VictronSensor(config_entry, description)
+        for description in VICTRON_SENSORS
         if not description.disabled
     )
 
@@ -100,3 +104,26 @@ class GoEChargerSensor(GoEChargerEntity, SensorEntity):
             self.async_write_ha_state()
 
         await mqtt.async_subscribe(self.hass, self._topic, message_received, 1)
+
+class VictronSensor(GoEChargerEntity, SensorEntity):
+    """Representation of a go-eCharger sensor that is updated via MQTT."""
+
+    entity_description: GoEChargerSensorEntityDescription
+
+    def __init__(
+        self,
+        config_entry: config_entries.ConfigEntry,
+        description: GoEChargerSensorEntityDescription,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(config_entry, description)
+
+        self.entity_description = description
+
+        if self.entity_description.isVictron:
+            self._attr_native_value = 0
+
+    @property
+    def available(self):
+        """Return True if entity is available."""
+        return self._attr_native_value is not None

@@ -113,6 +113,66 @@ def roundThreeDecimals(value, unused) -> float:
 
 VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = ( 
     GoEChargerSensorEntityDescription(
+        key="targetCarChargePower",
+        name="Target Power for car charging",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.POWER,
+        native_unit_of_measurement=POWER_WATT,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="frcUpdateTimer",
+        name="Force state will change in:",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=TIME_SECONDS,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        icon="mdi:swap-horizontal",
+        disabled=False,
+        isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="psmUpdateTimer",
+        name="Phase switch mode will change in:",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=TIME_SECONDS,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=True,
+        icon="mdi:swap-horizontal",
+        disabled=False,
+        isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="targetCarPowerAmountFulfilled",
+        name="Wh the car was already charged",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.ENERGY,
+        native_unit_of_measurement=ENERGY_WATT_HOUR,
+        state_class=STATE_CLASS_TOTAL,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="usedPhases",
+        name="Used Phases",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=None,
+        native_unit_of_measurement=None,
+        state_class=None,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    )
+)
+
+VICTRON_SENSORS_MQTT: tuple[GoEChargerSensorEntityDescription, ...] = ( 
+    GoEChargerSensorEntityDescription(
         key="globalGrid",
         name="Current global power usage",
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -180,64 +240,9 @@ VICTRON_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         disabled=False,
         isVictron=True,
     ),
-    GoEChargerSensorEntityDescription(
-        key="targetCarChargePower",
-        name="Target Power for car charging",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        device_class=SensorDeviceClass.POWER,
-        native_unit_of_measurement=POWER_WATT,
-        state_class=STATE_CLASS_MEASUREMENT,
-        entity_registry_enabled_default=True,
-        disabled=False,
-        isVictron=True,
-    ),
-    GoEChargerSensorEntityDescription(
-        key="frcUpdateTimer",
-        name="Force state will change in:",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement=TIME_SECONDS,
-        state_class=STATE_CLASS_MEASUREMENT,
-        entity_registry_enabled_default=True,
-        icon="mdi:swap-horizontal",
-        disabled=False,
-        isVictron=True,
-    ),
-    GoEChargerSensorEntityDescription(
-        key="psmUpdateTimer",
-        name="Phase switch mode will change in:",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        device_class=SensorDeviceClass.DURATION,
-        native_unit_of_measurement=TIME_SECONDS,
-        state_class=STATE_CLASS_MEASUREMENT,
-        entity_registry_enabled_default=True,
-        icon="mdi:swap-horizontal",
-        disabled=False,
-        isVictron=True,
-    ),
-    GoEChargerSensorEntityDescription(
-        key="targetCarPowerAmountFulfilled",
-        name="Wh the car was already charged",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        device_class=SensorDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_WATT_HOUR,
-        state_class=STATE_CLASS_TOTAL,
-        entity_registry_enabled_default=True,
-        disabled=False,
-        isVictron=True,
-    ),
-    GoEChargerSensorEntityDescription(
-        key="usedPhases",
-        name="Used Phases",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        device_class=None,
-        native_unit_of_measurement=None,
-        state_class=None,
-        entity_registry_enabled_default=True,
-        disabled=False,
-        isVictron=True,
-    )
 )
+
+
 
 GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
