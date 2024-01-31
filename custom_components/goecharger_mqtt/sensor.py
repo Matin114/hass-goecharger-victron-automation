@@ -106,7 +106,7 @@ class GoEChargerSensor(GoEChargerEntity, SensorEntity):
         await mqtt.async_subscribe(self.hass, self._topic, message_received, 1)
 
 class VictronSensor(GoEChargerEntity, SensorEntity):
-    """Representation of a go-eCharger sensor that is updated via MQTT."""
+    """Representation of a victron sensor that is updated not via MQTT."""
 
     entity_description: GoEChargerSensorEntityDescription
 
@@ -127,3 +127,14 @@ class VictronSensor(GoEChargerEntity, SensorEntity):
     def available(self):
         """Return True if entity is available."""
         return self._attr_native_value is not None
+    
+    async def async_added_to_hass(self):
+        """Subscribe to MQTT events."""
+
+        @callback
+        def message_received(message):
+            """Handle new MQTT messages."""
+            # do nothing since no state should be set
+            self.async_write_ha_state()
+
+        await mqtt.async_subscribe(self.hass, self._topic, message_received, 1) 
