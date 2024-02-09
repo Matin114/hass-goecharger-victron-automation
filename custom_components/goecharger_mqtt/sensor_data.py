@@ -4,6 +4,7 @@ from typing import Any
 
 from homeassistant.core import HomeAssistant, State
 from homeassistant.components import mqtt
+from homeassistant.helpers.entity_platform import EntityPlatform
 
 from .const import CONST_VICTRON_CHARGE_PRIOS
 from .definitions import GoEChargerStatusCodes
@@ -53,7 +54,13 @@ class VictronSensorData(SensorData):
         if self.state != newState:
             self.state = newState
             if self.attributes != None:
+                # set state to instant update the dashboard
                 self.hass.states.async_set(self.entityId, newState, self.attributes) 
+
+                # set _attr_native_value to prevent periodically set to 0 of the entry reload
+                sensorEntityPlatform: EntityPlatform = list(filter(lambda elem : elem.domain == "sensor", self.hass.data["entity_platform"]["goecharger_mqtt"]))[0]
+                sensorEntityPlatform.entities[self.entityId.lower()]._attr_native_value  = newState
+                
             
             # old way to change sensor data using mqtt
             #self.hass.async_add_job(mqtt.async_publish, self.hass, f"custom/{self.entityId.split('_',1)[1]}", newState)

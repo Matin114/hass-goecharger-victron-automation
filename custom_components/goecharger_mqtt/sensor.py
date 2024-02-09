@@ -6,6 +6,8 @@ from homeassistant.components import mqtt
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import callback
 
+from homeassistant.helpers import entity_platform
+
 from .definitions.sensor import GOE_SENSORS, VICTRON_SENSORS, VICTRON_SENSORS_MQTT, GoEChargerSensorEntityDescription
 from .entity import GoEChargerEntity
 
@@ -50,7 +52,7 @@ async def async_setup_entry(
     #     _LOGGER.debug(
     #         f"| `{description.key}` | {description.name} | {entity_category} | {native_unit_of_measurement} | {entity_registry_enabled} | {supported} | {reason} |"
     #     )
-
+    _LOGGER.warn(async_add_entities)
     async_add_entities(
         GoEChargerSensor(config_entry, description)
         for description in GOE_SENSORS+VICTRON_SENSORS_MQTT
@@ -127,14 +129,3 @@ class VictronSensor(GoEChargerEntity, SensorEntity):
     def available(self):
         """Return True if entity is available."""
         return self._attr_native_value is not None
-    
-    async def async_added_to_hass(self):
-        """Subscribe to MQTT events."""
-
-        @callback
-        def message_received(message):
-            """Handle new MQTT messages."""
-            # do nothing since no state should be set
-            self.async_write_ha_state()
-
-        await mqtt.async_subscribe(self.hass, self._topic, message_received, 1) 
