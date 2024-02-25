@@ -43,6 +43,21 @@ class GoESurplusService():
     targetCarPowerAmountFulfilled: VictronSensorData # (Wh) power already charged in prio 8
     totalEnergy: GoESensorData # (Wh) total power ever charged with the wallbox
 
+    # ------------AUTOMATIC MODE----------
+    automaticPercFrom0: VictronSensorData # (%) charge Percentage from 0 upwards 
+    automaticPercFrom10: VictronSensorData # (%) charge Percentage from 10 upwards 
+    automaticPercFrom20: VictronSensorData # (%) charge Percentage from 20 upwards 
+    automaticPercFrom30: VictronSensorData # (%) charge Percentage from 30 upwards 
+    automaticPercFrom40: VictronSensorData # (%) charge Percentage from 40 upwards 
+    automaticPercFrom50: VictronSensorData # (%) charge Percentage from 50 upwards 
+    automaticPercFrom60: VictronSensorData # (%) charge Percentage from 60 upwards 
+    automaticPercFrom70: VictronSensorData # (%) charge Percentage from 70 upwards 
+    automaticPercFrom80: VictronSensorData # (%) charge Percentage from 80 upwards 
+    automaticPercFrom90: VictronSensorData # (%) charge Percentage from 90 upwards 
+    automaticPercFrom100: VictronSensorData # (%) charge Percentage at 100 
+    allAutomaticPercRangeList: list
+    automaticLoadingPercentage: float # (%) charge Percentage actually used to not always load every range 
+    # ------------AUTOMATIC MODE----------
 
     powerAmountStart: float # (Wh) power at start of prio where car gets charged with a given amount of Wh
 
@@ -73,8 +88,8 @@ class GoESurplusService():
         self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarChargePower", dataType=float, defaultData=1)
         self.oldAmpVal = GoESensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_amp", mqttTopic=f"{goeTopicPrefix}amp", dataType=int, defaultData=0)
         self.ledBrightness = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_lbr", mqttTopic=f"{goeTopicPrefix}lbr", dataType=int, defaultData=0)
-        self.colorCharging = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cch", mqttTopic=f"{goeTopicPrefix}cch", dataType=int, defaultData=65793)
-        self.colorIdle = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cid", mqttTopic=f"{goeTopicPrefix}cid", dataType=int, defaultData=65793)
+        self.colorCharging = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cch", mqttTopic=f"{goeTopicPrefix}cch", defaultData=65793)
+        self.colorIdle = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cid", mqttTopic=f"{goeTopicPrefix}cid", defaultData=65793)
 
         # TODO calculate maxBatteryChargePower interally
         self.maxBatteryChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_maxBatteryChargePower", dataType=float)
@@ -90,6 +105,21 @@ class GoESurplusService():
         self.oldFrcVal = GoESensorData(hass=hass, entityId=f"select.go_echarger_{serialNumber}_frc", mqttTopic=f"{goeTopicPrefix}frc", dataType=int, stateMethod=stateFrc)
         self.oldPsmVal = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_psm", mqttTopic=f"{goeTopicPrefix}psm", dataType=int)
         self.totalEnergy = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_eto", dataType=float)
+        
+
+        self.automaticPercFrom0 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage0_10", dataType=float)
+        self.automaticPercFrom10 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage10_20", dataType=float)
+        self.automaticPercFrom20 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage20_30", dataType=float)
+        self.automaticPercFrom30 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage30_40", dataType=float)
+        self.automaticPercFrom40 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage40_50", dataType=float)
+        self.automaticPercFrom50 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage50_60", dataType=float)
+        self.automaticPercFrom60 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage60_70", dataType=float)
+        self.automaticPercFrom70 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage70_80", dataType=float)
+        self.automaticPercFrom80 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage80_90", dataType=float)
+        self.automaticPercFrom90 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage90_100", dataType=float)
+        self.automaticPerc100 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage100", dataType=float)
+        self.allAutomaticPercRangeList = [self.automaticPercFrom0, self.automaticPercFrom10, self.automaticPercFrom20, self.automaticPercFrom30, self.automaticPercFrom40, 
+                                self.automaticPercFrom50, self.automaticPercFrom60, self.automaticPercFrom70, self.automaticPercFrom80, self.automaticPercFrom90, self.automaticPerc100]
 
         # these sensors are always needes,  so should always be loaded
         self.mandatorySensorList = [self.chargePrio, self.globalGrid, self.batteryPower, self.batterySoc, self.oldTargetCarChargePower, 
@@ -158,6 +188,17 @@ class GoESurplusService():
             conditionalSensorList.append(self.manualCarChargePower)
         elif self.chargePrio.state == 6:
             conditionalSensorList.append(self.manualCarChargePower)
+        elif self.chargePrio.state == 7: # automatic
+            automaticPercRangeList = []
+
+            # to only load 2 of the automatic ranges look here at the batterySOC already, subtract 0.01 to avoid 100%
+            automaticPercIndex = int((self.batterySoc.state-0.01) / 10)
+            
+            automaticPercRangeList.append(self.allAutomaticPercRangeList[automaticPercIndex])
+            automaticPercRangeList.append(self.allAutomaticPercRangeList[automaticPercIndex+1])
+
+            conditionalSensorList.append(self.allAutomaticPercRangeList[automaticPercIndex])
+            conditionalSensorList.append(self.allAutomaticPercRangeList[automaticPercIndex+1])
         elif self.chargePrio.state == 8:
             conditionalSensorList.append(self.manualCarChargePower)
             conditionalSensorList.append(self.targetCarPowerAmount)
@@ -174,6 +215,20 @@ class GoESurplusService():
         if unavailableSensorList:
             _LOGGER.warn(f"Following CONDITIONAL fields couldn't be retrieved {unavailableSensorList}!\nCanceling charger calculations!")
             return False
+
+        if self.chargePrio.state == 7: # automatic
+            # calculate automaticLoadingPercentage
+            loadingPercentage = 0
+
+
+            # calculate weighting of the two ranges
+            weighting = ((self.batterySoc.state-0.01) % 10) / 10
+            # lower range weighting
+            loadingPercentage += (automaticPercRangeList[0].state/100) * (1-weighting)
+            # higher range weighting
+            loadingPercentage += (automaticPercRangeList[1].state/100) * weighting
+            
+            self.automaticLoadingPercentage = round(loadingPercentage, 2)
 
         return True
 
@@ -269,6 +324,8 @@ class GoESurplusService():
         elif self.chargePrio.state == 6: # charge with the configured power from manualCarChargePower
             targetCarChargePower = self.manualCarChargePower.state
             self.instantUpdatePower = True
+        elif self.chargePrio.state == 7: # automatically update the partition used for charging the car based on a configured curve
+            targetCarChargePower = availablePower * self.automaticLoadingPercentage
         elif self.chargePrio.state == 8: # charge car with a given amount of Wh
             # when the chargePrio is changed set current totalEnergy for targetCarPowerAmountFulfilled
             if self.instantUpdatePower:

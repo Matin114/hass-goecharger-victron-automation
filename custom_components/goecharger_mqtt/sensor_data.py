@@ -45,6 +45,7 @@ class SensorData():
             try:
                 self.state = self.dataType(curState.state)
             except ValueError:
+                _LOGGER.warn(f"Failed to convert value: {curState.state}, of type: {type(curState.state)}, to {self.dataType} for {self.entityId}")
                 self.state = self.defaultData
 
             

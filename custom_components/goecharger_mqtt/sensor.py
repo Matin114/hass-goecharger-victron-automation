@@ -52,7 +52,6 @@ async def async_setup_entry(
     #     _LOGGER.debug(
     #         f"| `{description.key}` | {description.name} | {entity_category} | {native_unit_of_measurement} | {entity_registry_enabled} | {supported} | {reason} |"
     #     )
-    _LOGGER.warn(async_add_entities)
     async_add_entities(
         GoEChargerSensor(config_entry, description)
         for description in GOE_SENSORS+VICTRON_SENSORS_MQTT
