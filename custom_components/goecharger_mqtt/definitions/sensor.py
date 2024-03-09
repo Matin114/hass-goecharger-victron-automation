@@ -87,7 +87,10 @@ def extract_item_from_array_to_float(value, key) -> float:
 
 def extract_item_from_array_to_int(value, key) -> int:
     """Extract item from array to int."""
-    return int(json.loads(value)[int(key)])
+    try:
+        return int(json.loads(value)[int(key)])
+    except IndexError:
+        return 0
 
 
 def extract_item_from_array_to_bool(value, key) -> bool:
@@ -356,7 +359,57 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     ),
     GoEChargerSensorEntityDescription(
         key="clp",
-        name="Current limit presets",
+        attribute="0",
+        name="Current limit preset 1",
+        state=extract_item_from_array_to_int,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.CURRENT,
+        native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=False,
+        disabled=False,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="clp",
+        attribute="1",
+        name="Current limit preset 2",
+        state=extract_item_from_array_to_int,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.CURRENT,
+        native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=False,
+        disabled=False,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="clp",
+        attribute="2",
+        name="Current limit preset 3",
+        state=extract_item_from_array_to_int,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.CURRENT,
+        native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=False,
+        disabled=False,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="clp",
+        attribute="3",
+        name="Current limit preset 4",
+        state=extract_item_from_array_to_int,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        device_class=SensorDeviceClass.CURRENT,
+        native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
+        state_class=STATE_CLASS_MEASUREMENT,
+        entity_registry_enabled_default=False,
+        disabled=False,
+    ),
+    GoEChargerSensorEntityDescription(
+        key="clp",
+        attribute="4",
+        name="Current limit preset 5",
+        state=extract_item_from_array_to_int,
         entity_category=EntityCategory.DIAGNOSTIC,
         device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=ELECTRIC_CURRENT_AMPERE,
