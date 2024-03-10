@@ -14,7 +14,7 @@ This Repository was cloned from [!["Original Repo"](https://img.shields.io/badge
 
 ## General
 
-This is a custom component for Home Assistant to integrate the go-eCharger HOME+ and HOMEfix using the MQTT API (v2).
+This is a custom component for Home Assistant to integrate the go-eCharger HOME+ and HOMEfix using the MQTT API (v2), which has been extended by a solar surplus charging logic.
 
 ![Lovelace entities card](lovelace-entities-card.png "Lovelace entities card")
 
@@ -25,6 +25,24 @@ Use HACS to install this custom component.
 ## Configuration
 
 Use the Web UI (Config flow) to add the "go-eCharger" integration. You have to know the `serial number` (6 digits) of your device. Please don't forget to [enable the MQTT API (v2) via the go-e Charger app](https://github.com/goecharger/go-eCharger-API-v2/blob/main/mqtt-en.md) first.
+
+To be able to use the different charing priorities you need to create a new automation using this blueprint:
+
+[![Open your Home Assistant instance and show the blueprint import dialog with a specific blueprint pre-filled.](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2FMatin114%2Fhass-goecharger-victron-automation%2Fblob%2Fmaster%2Fcustom_components%2FgoeSurplusController.yaml)
+
+There also are some values you need from your energy management system. These should be published periodically to the same MQTT server the GO-E charger is using:
+
+| Topic | Description |
+| ----- | ----------- |
+| custom/globalGrid | This is the current power load on the grid side. |
+| custom/batteryPower | This is the current load the battery is charged or discharged with. |
+| custom/batterySOC | This is the state of charge of your home battery in percent. |
+
+In case you have a Victron system and NodeRed activated, you should be able to just import [this flow](https://github.com/Matin114/hass-goecharger-victron-automation/blob/master/custom_components/nodeRedVictronFlow.json), otherwise you need to publish these values to mqtt some other way (Feel free to contact me, if you are having trouble doing so).
+
+To start off, you can copy [this dashboard](https://github.com/Matin114/hass-goecharger-victron-automation/blob/master/custom_components/chargerDashboard.yaml) to your system and customize it to your demands.
+
+Now everything should be up and running and you should be able to use the different charging priorities.
 
 ## Charging Priorities
 
@@ -54,6 +72,10 @@ Charges the car with an custom amount configured in the entity "Wh to charge the
 
 ### Use Grid
 Tries to charge the car the fastest possible, regardless of solar power or battery SOC.
+
+## Button control
+
+TODO
 
 ## Entities
 
