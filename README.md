@@ -1,12 +1,18 @@
-# homeassistant-goecharger-mqtt
+# hass-goecharger-victron-automation
 
-![GitHub actions](https://github.com/syssi/homeassistant-goecharger-mqtt/actions/workflows/pytest.yaml/badge.svg)
-![GitHub actions](https://github.com/syssi/homeassistant-goecharger-mqtt/actions/workflows/hassfest.yaml/badge.svg)
-![GitHub actions](https://github.com/syssi/homeassistant-goecharger-mqtt/actions/workflows/hacs.yaml/badge.svg)
-![GitHub stars](https://img.shields.io/github/stars/syssi/homeassistant-goecharger-mqtt)
-![GitHub forks](https://img.shields.io/github/forks/syssi/homeassistant-goecharger-mqtt)
-![GitHub watchers](https://img.shields.io/github/watchers/syssi/homeassistant-goecharger-mqtt)
+![GitHub actions](https://github.com/Matin114/hass-goecharger-victron-automation/actions/workflows/pytest.yaml/badge.svg)
+![GitHub actions](https://github.com/Matin114/hass-goecharger-victron-automation/actions/workflows/hassfest.yaml/badge.svg)
+![GitHub actions](https://github.com/Matin114/hass-goecharger-victron-automation/actions/workflows/hacs.yaml/badge.svg)
+![GitHub stars](https://img.shields.io/github/stars/Matin114/hass-goecharger-victron-automation)
+![GitHub forks](https://img.shields.io/github/forks/Matin114/hass-goecharger-victron-automation)
+![GitHub watchers](https://img.shields.io/github/watchers/Matin114/hass-goecharger-victron-automation)
 [!["Buy Me A Coffee"](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg)](https://www.buymeacoffee.com/syssi)
+
+## Disclaimer
+
+This Repository was cloned from [!["Original Repo"](https://img.shields.io/badge/syssio-homeassistant_goecharger_mqtt-blue.svg)](https://github.com/syssi/homeassistant-goecharger-mqtt.git) and extended. I've added a custom logic to controll the charging power of the wallbox in a system with potential surplus solar power and a home energy management system with battery (in my case a Victron system, but others should work with some additional steps).
+
+## General
 
 This is a custom component for Home Assistant to integrate the go-eCharger HOME+ and HOMEfix using the MQTT API (v2).
 
@@ -19,6 +25,35 @@ Use HACS to install this custom component.
 ## Configuration
 
 Use the Web UI (Config flow) to add the "go-eCharger" integration. You have to know the `serial number` (6 digits) of your device. Please don't forget to [enable the MQTT API (v2) via the go-e Charger app](https://github.com/goecharger/go-eCharger-API-v2/blob/main/mqtt-en.md) first.
+
+## Charging Priorities
+
+### OFF
+Turns the Charger off.
+
+### Automatic
+Charges car depending on the current battery SOC. The partion available to the wallbox must be defined in the entities starting with "automaticPercentage".
+
+### Prio Battery
+Tries to use all solar power to charge the home battery and only activates the wallbox, if power would go back to the grid.
+
+### Prio Wallbox
+Tries to use all solar power to charge the car.
+
+### 50/50
+Divides the solar power evenly between home battery and wallbox.
+
+### Discharge to SOC
+Charges the car with the power set in the entity "Manual Power for car charging" until battery SOC reaches the value of the entity "Min battery SOC".
+
+### Manual
+Charges the car with the power set in the entity "Manual Power for car charging".
+
+### Manual Amount
+Charges the car with an custom amount configured in the entity "Wh to charge the car with" with the power set in the entity "Manual Power for car charging".
+
+### Use Grid
+Tries to charge the car the fastest possible, regardless of solar power or battery SOC.
 
 ## Entities
 
