@@ -245,8 +245,6 @@ VICTRON_SENSORS_MQTT: tuple[GoEChargerSensorEntityDescription, ...] = (
     ),
 )
 
-
-
 GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="+/result",
@@ -281,7 +279,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="att",
         name="Automatic stop time",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=UnitOfTime.SECONDS,
@@ -293,7 +290,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="awc",
         name="Awattar country",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -305,7 +301,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="awp",
         name="Awattar maximum price threshold",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=CURRENCY_CENT,
@@ -317,7 +312,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         key="cch",
         name="Color charging",
         state=remove_quotes,
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -329,7 +323,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="cco",
         name="Car consumption",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -342,7 +335,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         key="cfi",
         name="Color finished",
         state=remove_quotes,
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -355,7 +347,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         key="cid",
         name="Color idle",
         state=remove_quotes,
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -418,8 +409,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         name="Current limit preset 5",
         state=extract_item_from_array_to_int,
         entity_category=EntityCategory.DIAGNOSTIC,
-        name="Current limit presets",
-        entity_category=None,
         device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -429,7 +418,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="ct",
         name="Car type",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -442,7 +430,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         key="cwc",
         name="Color wait for car",
         state=remove_quotes,
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -454,7 +441,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="dwo",
         name="Charging energy limit",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=SensorDeviceClass.ENERGY,
         native_unit_of_measurement=UnitOfEnergy.WATT_HOUR,
@@ -465,7 +451,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="fna",
         name="Friendly name",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -479,7 +464,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         name="Force state",
         state=transform_code,
         attribute="frc",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -491,7 +475,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="frc",
         name="Force state code",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -503,7 +486,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="lbr",  # 0...255
         name="LED brightness",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -517,7 +499,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         name="Logic mode",
         state=transform_code,
         attribute="lmo",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -528,7 +509,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="lof",
         name="Load balancing fallback current",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
@@ -540,7 +520,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="log",
         name="Load balancing group id",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -552,7 +531,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="lop",
         name="Load balancing priority",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -564,7 +542,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="lot",
         name="Load balancing total ampere",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
@@ -576,7 +553,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="loty",
         name="Load balancing type",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -588,7 +564,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="map",
         name="Load mapping",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -600,7 +575,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="mca",
         name="Minimum charging current",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=SensorDeviceClass.CURRENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
@@ -611,7 +585,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="mci",
         name="Minimum charging interval",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=UnitOfTime.MILLISECONDS,
@@ -624,7 +597,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="mcpd",
         name="Minimum charge pause duration",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=UnitOfTime.MILLISECONDS,
@@ -637,7 +609,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="mptwt",
         name="Minimum phase toggle wait time",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=UnitOfTime.MILLISECONDS,
@@ -650,7 +621,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="mpwst",
         name="Minimum phase wish switch time",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=UnitOfTime.MILLISECONDS,
@@ -663,7 +633,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="pass",
         name="User password",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -675,7 +644,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="psmd",
         name="Force single phase duration",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=UnitOfTime.MILLISECONDS,
@@ -688,7 +656,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="sch_satur",
         name="Scheduler saturday",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -700,7 +667,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="sch_sund",
         name="Scheduler sunday",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -712,7 +678,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="sch_week",
         name="Scheduler weekday",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -724,7 +689,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="spl3",
         name="Three phase switch level",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=SensorDeviceClass.POWER,
         native_unit_of_measurement=UnitOfPower.WATT,  # This unit is a best guess
@@ -735,7 +699,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="sumd",
         name="Simulate unplugging duration",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=UnitOfTime.MILLISECONDS,
@@ -748,7 +711,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="tds",
         name="Timezone daylight saving mode",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -760,7 +722,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="tof",
         name="Timezone offset in minutes",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -772,7 +733,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="ts",
         name="Time server",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -784,7 +744,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="tssi",
         name="Time server sync interval",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -796,7 +755,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="tssm",
         name="Time server sync mode",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -808,7 +766,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="tsss",
         name="Time server sync status",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -822,7 +779,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
         name="Cable unlock mode",
         state=transform_code,
         attribute="ust",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -834,7 +790,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="ust",
         name="Cable unlock mode code",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -846,7 +801,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="wak",
         name="WiFi accesspoint encryption key",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -858,7 +812,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="wan",
         name="WiFi accesspoint network name",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -870,7 +823,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="wifis",
         name="WiFi configurations",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -1105,7 +1057,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="del",
         name="Delete card",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -1117,7 +1068,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="delw",
         name="Delete STA config",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -1129,7 +1079,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="lrn",
         name="Learn card",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -1141,7 +1090,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="oct",
         name="Firmware update trigger",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=None,
         native_unit_of_measurement=None,
@@ -2228,7 +2176,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="psm",
         name="Phase switch mode",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         icon="mdi:speedometer",
         device_class=None,
@@ -2360,7 +2307,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="ppv",
         name="Power from Solar Panels (from ids)",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=SensorDeviceClass.POWER,
         native_unit_of_measurement=UnitOfPower.WATT,
@@ -2371,7 +2317,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="pgrid",
         name="Power from grid (from ids)",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=SensorDeviceClass.POWER,
         native_unit_of_measurement=UnitOfPower.WATT,
@@ -2382,7 +2327,6 @@ GOE_SENSORS: tuple[GoEChargerSensorEntityDescription, ...] = (
     GoEChargerSensorEntityDescription(
         key="pakku",
         name="Power from battery (from ids)",
-        entity_category=EntityCategory.DIAGNOSTIC,
         entity_category=None,
         device_class=SensorDeviceClass.POWER,
         native_unit_of_measurement=UnitOfPower.WATT,
