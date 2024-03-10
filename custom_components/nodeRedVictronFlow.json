@@ -1,0 +1,571 @@
+[
+    {
+        "id": "c3a9d22d8eb9f042",
+        "type": "tab",
+        "label": "Test",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "1c7e2b4deeb715ab",
+        "type": "mqtt out",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "topic": "custom/globalGrid",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "ca7519162ed1641c",
+        "x": 1250,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "6ab671a098183eaf",
+        "type": "mqtt out",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "topic": "custom/batterySOC",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "ca7519162ed1641c",
+        "x": 1250,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "dbcd5523041f0814",
+        "type": "mqtt out",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "topic": "custom/batteryCurrent",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "ca7519162ed1641c",
+        "x": 1260,
+        "y": 360,
+        "wires": []
+    },
+    {
+        "id": "45b9cfd7621a6405",
+        "type": "mqtt out",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "topic": "custom/batteryVoltage",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "ca7519162ed1641c",
+        "x": 1260,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "bb252894df02db3b",
+        "type": "mqtt out",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "topic": "custom/batteryPower",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "ca7519162ed1641c",
+        "x": 1260,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "61ee75ab8c55d069",
+        "type": "victron-input-battery",
+        "z": "c3a9d22d8eb9f042",
+        "service": "com.victronenergy.battery/279",
+        "path": "/Soc",
+        "serviceObj": {
+            "service": "com.victronenergy.battery/279",
+            "name": "SmartShunt 500A/50mV"
+        },
+        "pathObj": {
+            "path": "/Soc",
+            "type": "float",
+            "name": "State of charge (%)"
+        },
+        "initial": "",
+        "name": "",
+        "onlyChanges": false,
+        "x": 450,
+        "y": 400,
+        "wires": [
+            [
+                "867d4f268cbb66b9"
+            ]
+        ]
+    },
+    {
+        "id": "17cbcf4b97f87fa0",
+        "type": "victron-input-system",
+        "z": "c3a9d22d8eb9f042",
+        "service": "com.victronenergy.system/0",
+        "path": "/Ac/Grid/L1/Power",
+        "serviceObj": {
+            "service": "com.victronenergy.system/0",
+            "name": "Venus system"
+        },
+        "pathObj": {
+            "path": "/Ac/Grid/L1/Power",
+            "type": "float",
+            "name": "Grid L1 (W)"
+        },
+        "initial": "",
+        "name": "",
+        "onlyChanges": false,
+        "x": 400,
+        "y": 460,
+        "wires": [
+            [
+                "529877defffb8ffc"
+            ]
+        ]
+    },
+    {
+        "id": "a3e10f99b7bd1bcd",
+        "type": "victron-input-system",
+        "z": "c3a9d22d8eb9f042",
+        "service": "com.victronenergy.system/0",
+        "path": "/Ac/Grid/L2/Power",
+        "serviceObj": {
+            "service": "com.victronenergy.system/0",
+            "name": "Venus system"
+        },
+        "pathObj": {
+            "path": "/Ac/Grid/L2/Power",
+            "type": "float",
+            "name": "Grid L2 (W)"
+        },
+        "initial": "",
+        "name": "",
+        "onlyChanges": false,
+        "x": 400,
+        "y": 500,
+        "wires": [
+            [
+                "9dae24eb8955b6ec"
+            ]
+        ]
+    },
+    {
+        "id": "fb34c0b9a1015820",
+        "type": "victron-input-system",
+        "z": "c3a9d22d8eb9f042",
+        "service": "com.victronenergy.system/0",
+        "path": "/Ac/Grid/L3/Power",
+        "serviceObj": {
+            "service": "com.victronenergy.system/0",
+            "name": "Venus system"
+        },
+        "pathObj": {
+            "path": "/Ac/Grid/L3/Power",
+            "type": "float",
+            "name": "Grid L3 (W)"
+        },
+        "initial": "",
+        "name": "",
+        "onlyChanges": false,
+        "x": 400,
+        "y": 540,
+        "wires": [
+            [
+                "bca23e0443a153e5"
+            ]
+        ]
+    },
+    {
+        "id": "529877defffb8ffc",
+        "type": "change",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "GridL1",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 460,
+        "wires": [
+            [
+                "a5ab7f72bdd9c305"
+            ]
+        ]
+    },
+    {
+        "id": "9dae24eb8955b6ec",
+        "type": "change",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "GridL2",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 500,
+        "wires": [
+            [
+                "a5ab7f72bdd9c305"
+            ]
+        ]
+    },
+    {
+        "id": "bca23e0443a153e5",
+        "type": "change",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "GridL3",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 540,
+        "wires": [
+            [
+                "a5ab7f72bdd9c305"
+            ]
+        ]
+    },
+    {
+        "id": "a5ab7f72bdd9c305",
+        "type": "join",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "5",
+        "count": "",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 950,
+        "y": 500,
+        "wires": [
+            [
+                "efba86992ccd736b"
+            ]
+        ]
+    },
+    {
+        "id": "efba86992ccd736b",
+        "type": "function",
+        "z": "c3a9d22d8eb9f042",
+        "name": "Grid",
+        "func": "//Eingänge einlesen\nvar Temp1 =msg.payload['GridL1'];\nvar Temp2 =msg.payload['GridL2'];\nvar Temp3 =msg.payload['GridL3'];\n\n//Ergebniss berechnen\nvar Temp=Temp1+Temp2+Temp3;\nTemp=Math.round(Temp);\n\n//Global ausgeben\nglobal.set(\"GlobalGrid\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1070,
+        "y": 500,
+        "wires": [
+            [
+                "1c7e2b4deeb715ab"
+            ]
+        ]
+    },
+    {
+        "id": "867d4f268cbb66b9",
+        "type": "function",
+        "z": "c3a9d22d8eb9f042",
+        "name": "SOC",
+        "func": "//Eingänge einlesen\nvar Temp1 =msg.payload;\n\n//Ergebniss berechnen\nvar Temp=Temp1;\nTemp=Math.round(Temp*10)/10;\n\n//Global ausgeben\nglobal.set(\"GlobalSOC\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1070,
+        "y": 400,
+        "wires": [
+            [
+                "6ab671a098183eaf"
+            ]
+        ]
+    },
+    {
+        "id": "aec8e84c59c679c5",
+        "type": "victron-input-battery",
+        "z": "c3a9d22d8eb9f042",
+        "service": "com.victronenergy.battery/279",
+        "path": "/Dc/0/Voltage",
+        "serviceObj": {
+            "service": "com.victronenergy.battery/279",
+            "name": "SmartShunt 500A/50mV"
+        },
+        "pathObj": {
+            "path": "/Dc/0/Voltage",
+            "type": "float",
+            "name": "Battery voltage (V)"
+        },
+        "initial": "",
+        "name": "",
+        "onlyChanges": false,
+        "x": 450,
+        "y": 320,
+        "wires": [
+            [
+                "e25d04ec2b938241"
+            ]
+        ]
+    },
+    {
+        "id": "e25d04ec2b938241",
+        "type": "change",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "VDC",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 320,
+        "wires": [
+            [
+                "d526545923d1eb0d",
+                "442d3d2e61249c67"
+            ]
+        ]
+    },
+    {
+        "id": "d526545923d1eb0d",
+        "type": "function",
+        "z": "c3a9d22d8eb9f042",
+        "name": "VDC",
+        "func": "//Eingänge einlesen\nvar Temp1 =msg.payload;\n\n//Ergebniss berechnen\nvar Temp=Temp1;\n//Temp=Math.round(Temp);\n\n//Global ausgeben\nglobal.set(\"GlobalVDC\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1070,
+        "y": 320,
+        "wires": [
+            [
+                "45b9cfd7621a6405"
+            ]
+        ]
+    },
+    {
+        "id": "ef11781a7f894da2",
+        "type": "function",
+        "z": "c3a9d22d8eb9f042",
+        "name": "WDC",
+        "func": "//Eingänge einlesen\nvar Temp1 =msg.payload['VDC'];\nvar Temp2 =msg.payload['ADC'];\n\n//Ergebniss berechnen\nvar Temp=Temp1*Temp2;\nTemp=Math.round(Temp);\n\n//Global ausgeben\nglobal.set(\"GlobalWDC\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1070,
+        "y": 280,
+        "wires": [
+            [
+                "bb252894df02db3b"
+            ]
+        ]
+    },
+    {
+        "id": "442d3d2e61249c67",
+        "type": "join",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "mode": "custom",
+        "build": "object",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "7",
+        "count": "",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 950,
+        "y": 280,
+        "wires": [
+            [
+                "ef11781a7f894da2"
+            ]
+        ]
+    },
+    {
+        "id": "30c9282f34e12deb",
+        "type": "victron-input-battery",
+        "z": "c3a9d22d8eb9f042",
+        "service": "com.victronenergy.battery/279",
+        "path": "/Dc/0/Current",
+        "serviceObj": {
+            "service": "com.victronenergy.battery/279",
+            "name": "SmartShunt 500A/50mV"
+        },
+        "pathObj": {
+            "path": "/Dc/0/Current",
+            "type": "float",
+            "name": "Battery current (A)"
+        },
+        "initial": "",
+        "name": "",
+        "onlyChanges": false,
+        "x": 450,
+        "y": 360,
+        "wires": [
+            [
+                "866c7710285fb3f4"
+            ]
+        ]
+    },
+    {
+        "id": "866c7710285fb3f4",
+        "type": "change",
+        "z": "c3a9d22d8eb9f042",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "topic",
+                "pt": "msg",
+                "to": "ADC",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 780,
+        "y": 360,
+        "wires": [
+            [
+                "442d3d2e61249c67",
+                "22c6285f84cbdb65"
+            ]
+        ]
+    },
+    {
+        "id": "22c6285f84cbdb65",
+        "type": "function",
+        "z": "c3a9d22d8eb9f042",
+        "name": "ADC",
+        "func": "//Eingänge einlesen\nvar Temp1 =msg.payload;\n\n//Ergebniss berechnen\nvar Temp=Temp1;\n//Temp=Math.round(Temp);\n\n//Global ausgeben\nglobal.set(\"GlobalADC\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1070,
+        "y": 360,
+        "wires": [
+            [
+                "dbcd5523041f0814"
+            ]
+        ]
+    },
+    {
+        "id": "ca7519162ed1641c",
+        "type": "mqtt-broker",
+        "name": "VictronLocal Auto",
+        "broker": "venus.local",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "5",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    }
+]

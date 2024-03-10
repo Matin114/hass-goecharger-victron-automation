@@ -25,7 +25,7 @@ class GoEChargerNumberEntityDescription(
 VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     GoEChargerNumberEntityDescription(
         key="automaticPercentage0_10",
-        name="Automatic partion 0-10",
+        name="Auto. from 0",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -38,7 +38,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage10_20",
-        name="Automatic partion 10-20",
+        name="Auto. from 10",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -51,7 +51,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage20_30",
-        name="Automatic partion 20-30",
+        name="Auto. from 20",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -64,7 +64,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage30_40",
-        name="Automatic partion 30-40",
+        name="Auto. from 30",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -77,7 +77,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage40_50",
-        name="Automatic partion 40-50",
+        name="Auto. from 40",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -90,7 +90,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage50_60",
-        name="Automatic partion 50-60",
+        name="Auto. from 50",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -103,7 +103,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage60_70",
-        name="Automatic partion 60-70",
+        name="Auto. from 60",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -116,7 +116,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage70_80",
-        name="Automatic partion 70-80",
+        name="Auto. from 70",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -129,7 +129,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage80_90",
-        name="Automatic partion 80-90",
+        name="Auto. from 80",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -142,7 +142,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage90_100",
-        name="Automatic partion 90-100",
+        name="Auto. from 90",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -155,7 +155,7 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
     ),
     GoEChargerNumberEntityDescription(
         key="automaticPercentage100",
-        name="Automatic at 100",
+        name="Auto. at 100",
         entity_category=EntityCategory.CONFIG,
         device_class=None,
         native_unit_of_measurement=PERCENTAGE,
@@ -165,22 +165,6 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
         native_min_value=0,
         native_step=5,
         isVictron=True,
-    ),
-)
-
-VICTRON_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
-    GoEChargerNumberEntityDescription(
-        key="targetCarPowerAmount",
-        name="Wh to charge the car with",
-        entity_category=EntityCategory.CONFIG,
-        device_class=NumberDeviceClass.ENERGY,
-        native_unit_of_measurement=ENERGY_WATT_HOUR,
-        entity_registry_enabled_default=True,
-        disabled=False,
-        native_max_value=50000,
-        native_min_value=0,
-        native_step=100,
-        isVictron=True
     ),
     GoEChargerNumberEntityDescription(
         key="manualCarChargePower",
@@ -206,6 +190,22 @@ VICTRON_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
         native_max_value=100,
         native_min_value=0,
         native_step=1,
+        isVictron=True
+    ),
+)
+
+VICTRON_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
+    GoEChargerNumberEntityDescription(
+        key="targetCarPowerAmount",
+        name="Wh to charge the car with",
+        entity_category=EntityCategory.CONFIG,
+        device_class=NumberDeviceClass.ENERGY,
+        native_unit_of_measurement=ENERGY_WATT_HOUR,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        native_max_value=50000,
+        native_min_value=0,
+        native_step=100,
         isVictron=True
     ),
 )

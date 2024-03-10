@@ -19,7 +19,7 @@ trigger:
       - sensor.go_echarger_217953_lbp
     id: buttonPressed
   - platform: time_pattern
-    seconds: /5
+    seconds: /10
     id: timeTrigger
 
 
