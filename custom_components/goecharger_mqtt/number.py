@@ -55,9 +55,11 @@ class GoEChargerNumber(GoEChargerEntity, NumberEntity):
         setterTopic = f"{self._topic}"
         if not self.entity_description.isVictron:
             setterTopic += "/set"
-        await mqtt.async_publish(
-            self.hass, setterTopic, int(value)
-        )
+            
+        if self.native_step == 1:
+            await mqtt.async_publish(self.hass, setterTopic, int(value))
+        else:
+            await mqtt.async_publish(self.hass, setterTopic, value)
 
     async def async_added_to_hass(self):
         """Subscribe to MQTT events."""
