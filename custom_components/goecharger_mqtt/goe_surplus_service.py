@@ -396,7 +396,7 @@ class GoESurplusService():
                 ampNewVal = targetCarChargePower/400/1.73
 
         ampNewVal = int(ampNewVal)
-
+    
         # enable discharging battery for priority 2 & 3 (prioritize battery & 50/50) 
         # IF (battery is already charged up to 97% OR has reached it before and is still above 95%) AND feeding the grid with more than 300W
         if self.chargePrio.state in [2,3,4,6,7,8] and (self.batterySoc.state >= 97 or self.batteryHasReachedDischargeSOC) and self.globalGrid.state < -300:
