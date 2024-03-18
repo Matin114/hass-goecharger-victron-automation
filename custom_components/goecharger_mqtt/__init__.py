@@ -28,6 +28,7 @@ PLATFORMS: list[str] = [
     "sensor",
     "select",
     "switch",
+    "input_text"
 ]
 
 _LOGGER = logging.getLogger(__name__)

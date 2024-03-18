@@ -8,8 +8,8 @@ from homeassistant.components.text import TextEntity
 from homeassistant.helpers.restore_state import ExtraStoredData, RestoreEntity
 from homeassistant.core import callback
 
-from .definitions.input_text import VICTRON_RESTORE_INPUT_TEXT, GoEChargerInputTextEntityDescription
-from .entity import GoEChargerEntity
+from ..definitions.input_text import VICTRON_RESTORE_INPUT_TEXT, GoEChargerInputTextEntityDescription
+from ..entity import GoEChargerEntity
 
 _LOGGER = logging.getLogger(__name__)
 
