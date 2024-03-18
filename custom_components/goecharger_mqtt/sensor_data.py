@@ -58,8 +58,10 @@ class VictronSensorData(SensorData):
                 # set state to instant update the dashboard
                 self.hass.states.async_set(self.entityId, newState, self.attributes) 
 
-                # set _attr_native_value to prevent periodically set to 0 of the entry reload
-                sensorEntityPlatform: EntityPlatform = list(filter(lambda elem : elem.domain == "sensor", self.hass.data["entity_platform"]["goecharger_mqtt"]))[0]
+
+                # set _attr_native_value to prevent periodically set to 0 by the entry reload
+                entityDomain = self.entityId.split(".")[0]
+                sensorEntityPlatform: EntityPlatform = list(filter(lambda elem : elem.domain == entityDomain, self.hass.data["entity_platform"]["goecharger_mqtt"]))[0]
                 sensorEntityPlatform.entities[self.entityId.lower()]._attr_native_value  = newState
                 
             

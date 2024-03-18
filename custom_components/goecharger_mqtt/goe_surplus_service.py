@@ -64,7 +64,8 @@ class GoESurplusService():
     instantUpdatePower: bool = False # (bool) if chargePrio changes or some prios are selected the chargePower should change instantly
     batteryHasReachedDischargeSOC = False
     mandatorySensorList:list[SensorData]
-    valueChangeAllower = {"buttonActive" : datetime.now()} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
+    valueChangeAllower = {} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
+    lastButtonPress = datetime.now()
 
     def __init__(
         self,
@@ -154,6 +155,10 @@ class GoESurplusService():
             # on first button press, it should only be activated and shown to the user, which priority is active
             # if pressed within a certain time it will cycle through priorities
 
+            # only react to button press when the last button press is at least 1 sec ago, fixes problem of button activating twice on single press
+            if datetime.now() < self.lastButtonPress+timedelta(seconds=1):
+                return False
+
             # if ledBrightness is max, we consider the button active
             if self.ledBrightness.state == 255:
                 # cycle through priorities
@@ -174,7 +179,7 @@ class GoESurplusService():
         elif triggerId == "timeTrigger":
             # TODO change brightness to configurable default brightness instead of 100
             # reset ledBrightness when button isn't active anymore
-            if datetime.now() >= self.valueChangeAllower["buttonActive"]:
+            if datetime.now() >= self.lastButtonPress+timedelta(seconds=10):
                 self.ledBrightness.setData(100)
             
 
@@ -431,9 +436,9 @@ class GoESurplusService():
         return ampNewVal, targetCarChargePower
     
     def updateLedColor(self, chargePrio:int):
-        # max brightness for 5 sec for better viewing
+        # max brightness for 10 sec for better viewing
         self.ledBrightness.setData(255)
-        self.valueChangeAllower["buttonActive"] = datetime.now()+timedelta(seconds=10)
+        self.lastButtonPress = datetime.now()
         # update colors
-        self.colorCharging.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["color"]))
-        self.colorIdle.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["color"]))
+        self.colorCharging.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["defaultColor"]))
+        self.colorIdle.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["defaultColor"]))
