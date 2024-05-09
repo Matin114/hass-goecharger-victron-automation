@@ -4,8 +4,6 @@ blueprint:
   domain: automation
   author: Matin114
 
-# If motion is detected within the delay,
-# we restart the script.
 mode: restart
 max_exceeded: silent
 

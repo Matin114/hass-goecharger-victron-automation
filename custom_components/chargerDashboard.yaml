@@ -19,7 +19,7 @@ cards:
     conditions:
       - condition: state
         entity: select.custom_chargeprio
-        state: Manuelle Menge
+        state: Manual Amount
     card:
       type: entities
       entities:
@@ -30,7 +30,7 @@ cards:
     conditions:
       - condition: state
         entity: select.custom_chargeprio
-        state: Manuel
+        state: Manual
     card:
       type: entities
       entities:
@@ -39,7 +39,7 @@ cards:
     conditions:
       - condition: state
         entity: select.custom_chargeprio
-        state: Hausakku entladen bis SOC
+        state: Discharge to SOC
     card:
       type: entities
       entities:
@@ -49,7 +49,7 @@ cards:
     conditions:
       - condition: state
         entity: select.custom_chargeprio
-        state: Automatik
+        state: Automatic
     card:
       type: entities
       entities:
