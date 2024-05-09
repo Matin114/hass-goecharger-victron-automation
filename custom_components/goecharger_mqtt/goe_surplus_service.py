@@ -440,5 +440,5 @@ class GoESurplusService():
         self.ledBrightness.setData(255)
         self.lastButtonPress = datetime.now()
         # update colors
-        self.colorCharging.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["defaultColor"]))
-        self.colorIdle.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["defaultColor"]))
+        self.colorCharging.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["color"]))
+        self.colorIdle.setData(json.dumps(CONST_VICTRON_CHARGE_PRIOS[str(chargePrio)]["color"]))
