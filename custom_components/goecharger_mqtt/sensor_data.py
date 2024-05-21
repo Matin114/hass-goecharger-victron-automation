@@ -43,7 +43,10 @@ class SensorData():
             self.state = stateMethodData[0] if stateMethodData[1] else self.defaultData
         else:
             try:
-                self.state = self.dataType(curState.state)
+                if self.dataType == bool:
+                    self.state = True if curState.state == "on" else False
+                else:
+                    self.state = self.dataType(curState.state)
             except ValueError:
                 _LOGGER.warn(f"Failed to convert value: {curState.state}, of type: {type(curState.state)}, to {self.dataType} for {self.entityId}")
                 self.state = self.defaultData
