@@ -59,7 +59,7 @@ class GoESurplusService():
     automaticLoadingPercentage: float # (%) charge Percentage actually used to not always load every range 
     # ------------AUTOMATIC MODE----------
 
-    powerAmountStart: float # (Wh) power at start of prio where car gets charged with a given amount of Wh
+    powerAmountStart: float = 0 # (Wh) power at start of prio where car gets charged with a given amount of Wh
 
     instantUpdatePower: bool = False # (bool) if chargePrio changes or some prios are selected the chargePower should change instantly
     batteryHasReachedDischargeSOC = False
@@ -91,9 +91,10 @@ class GoESurplusService():
         self.ledBrightness = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_lbr", mqttTopic=f"{goeTopicPrefix}lbr", dataType=int, defaultData=0)
         self.colorCharging = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cch", mqttTopic=f"{goeTopicPrefix}cch", defaultData=65793)
         self.colorIdle = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cid", mqttTopic=f"{goeTopicPrefix}cid", defaultData=65793)
+        self.carConnected = GoESensorData(hass=hass, entityId=f"binary_sensor.go_echarger_{serialNumber}_car", dataType=bool)
 
         # TODO calculate maxBatteryChargePower interally
-        self.maxBatteryChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_maxBatteryChargePower", dataType=float)
+        self.maxBatteryChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_maxBatteryChargePower", dataType=float, defaultData=25000)
         self.targetCarPowerAmount = VictronSensorData(hass=hass, entityId="number.custom_targetCarPowerAmount", dataType=float)
         self.batterySocMin = VictronSensorData(hass=hass, entityId="number.custom_batterySOCMin", dataType=float)
         self.manualCarChargePower = VictronSensorData(hass=hass, entityId="number.custom_manualCarChargePower", dataType=float)
@@ -125,7 +126,8 @@ class GoESurplusService():
         # these sensors are always needes,  so should always be loaded
         self.mandatorySensorList = [self.chargePrio, self.globalGrid, self.batteryPower, self.batterySoc, self.oldTargetCarChargePower, 
                                         self.carChargePower, self.oldFrcVal, self.oldPsmVal, self.usedPhases, self.oldAmpVal, 
-                                        self.colorCharging, self.colorIdle, self.ledBrightness, self.frcUpdateTimer, self.psmUpdateTimer]
+                                        self.colorCharging, self.colorIdle, self.ledBrightness, self.carConnected, self.targetCarPowerAmountFulfilled,
+                                        self.totalEnergy, self.frcUpdateTimer, self.psmUpdateTimer]
 
 
     def initData(self, triggerId) -> bool:
@@ -147,10 +149,7 @@ class GoESurplusService():
         if triggerId == "prioChanged":
             self.instantUpdatePower = True
             self.updateLedColor(self.chargePrio.state)
-            
-            # reset targetCarPowerAmountFulfilled for Prio 8
-            if self.chargePrio.state == 8:
-                self.targetCarPowerAmountFulfilled.setData(0)
+
         elif triggerId == "buttonPressed":
             # on first button press, it should only be activated and shown to the user, which priority is active
             # if pressed within a certain time it will cycle through priorities
@@ -207,8 +206,6 @@ class GoESurplusService():
         elif self.chargePrio.state == 8:
             conditionalSensorList.append(self.manualCarChargePower)
             conditionalSensorList.append(self.targetCarPowerAmount)
-            conditionalSensorList.append(self.targetCarPowerAmountFulfilled)
-            conditionalSensorList.append(self.totalEnergy)
             conditionalSensorList.append(self.maxBatteryChargePower)
 
         for sensor in conditionalSensorList:
@@ -245,6 +242,16 @@ class GoESurplusService():
             _LOGGER.warn("Data initialization failed! Controller won't be executed!")
             return
         
+        # update the charged energy since plugging the car in
+        if self.carConnected.state:
+            newTargetCarPowerAmountFulfilled = abs(round(self.totalEnergy.state - self.powerAmountStart))
+        else:
+            self.powerAmountStart = self.totalEnergy.state
+            newTargetCarPowerAmountFulfilled = 0
+        # update targetcarpoweramountfulfilled
+        self.targetCarPowerAmountFulfilled.setData(newTargetCarPowerAmountFulfilled)
+
+
         targetCarChargePower = round(self.calcTargetCarChargePower(), 0)
 
         # decide between single phase and multiphase
@@ -332,21 +339,15 @@ class GoESurplusService():
         elif self.chargePrio.state == 7: # automatically update the partition used for charging the car based on a configured curve
             targetCarChargePower = availablePower * self.automaticLoadingPercentage
         elif self.chargePrio.state == 8: # charge car with a given amount of Wh
-            # when the chargePrio is changed set current totalEnergy for targetCarPowerAmountFulfilled
-            if self.instantUpdatePower:
-                self.powerAmountStart = self.totalEnergy.state
-
-            newTargetCarPowerAmountFulfilled = abs(round(self.totalEnergy.state - self.powerAmountStart))
             # check if targetCarPowerAmount was already reached 
-            if newTargetCarPowerAmountFulfilled >= self.targetCarPowerAmount.state:
+            if self.targetCarPowerAmountFulfilled.state >= self.targetCarPowerAmount.state:
                 targetCarChargePower = 0
                 self.instantUpdatePower = True
             else:
                 # otherwise charge with either configured power or availablePower - maxBatteryChargePower, considering which is bigger
                 targetCarChargePower = max(self.manualCarChargePower.state, availablePower - self.maxBatteryChargePower.state)
 
-            # update targetcarpoweramountfulfilled
-            self.targetCarPowerAmountFulfilled.setData(newTargetCarPowerAmountFulfilled)
+            
 
         else: # either OFF or unknown chargePrio
             targetCarChargePower = 0
