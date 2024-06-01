@@ -62,6 +62,7 @@ class GoESurplusService():
     powerAmountStart: float = 0 # (Wh) power at start of prio where car gets charged with a given amount of Wh
 
     instantUpdatePower: bool = False # (bool) if chargePrio changes or some prios are selected the chargePower should change instantly
+    previousCarConnected: bool = False # carConnected state from last run, needed for targetCarPowerAmountFulfilled to be reset only after car plugged in again
     batteryHasReachedDischargeSOC = False
     mandatorySensorList:list[SensorData]
     valueChangeAllower = {} # here fields which may not be changed instantly can be entered and the time they are allowed to change. see changeOfValueAllowed for more info
@@ -242,14 +243,12 @@ class GoESurplusService():
             _LOGGER.warn("Data initialization failed! Controller won't be executed!")
             return
         
-        # update the charged energy since plugging the car in
-        if self.carConnected.state:
-            newTargetCarPowerAmountFulfilled = abs(round(self.totalEnergy.state - self.powerAmountStart))
-        else:
+        # newTargetCarPowerAmountFulfilled when car gets plugged in again after not being plugged in or initially
+        if (not self.previousCarConnected and self.carConnected.state) or self.powerAmountStart == 0:
             self.powerAmountStart = self.totalEnergy.state
-            newTargetCarPowerAmountFulfilled = 0
         # update targetcarpoweramountfulfilled
-        self.targetCarPowerAmountFulfilled.setData(newTargetCarPowerAmountFulfilled)
+        self.targetCarPowerAmountFulfilled.setData(abs(round(self.totalEnergy.state - self.powerAmountStart)))
+        self.previousCarConnected = self.carConnected.state
 
 
         targetCarChargePower = round(self.calcTargetCarChargePower(), 0)
