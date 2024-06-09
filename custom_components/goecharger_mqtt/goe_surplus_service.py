@@ -106,7 +106,7 @@ class GoESurplusService():
         self.psmUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_psmUpdateTimer", dataType=int)
         self.usedPhases = VictronSensorData(hass=hass, entityId="sensor.custom_usedPhases", stateMethod=stateUsedPhases, additionalData=usedPhasesAdditionalData)
         self.maxBatteryDischargePower = VictronSensorData(hass=hass, entityId="number.custom_maxBatteryDischargePower", dataType=int)
-        self.allowGridUsage = VictronSensorData(hass=hass, entityId="switch.custom_allowGridUsage", dataType=bool)
+        self.allowGridUsage = VictronSensorData(hass=hass, entityId="switch.custom_allowGridUsage", dataType=bool, defaultData=False)
 
         self.carChargePower = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_12", dataType=float)
         self.oldFrcVal = GoESensorData(hass=hass, entityId=f"select.go_echarger_{serialNumber}_frc", mqttTopic=f"{goeTopicPrefix}frc", dataType=int, stateMethod=stateFrc)

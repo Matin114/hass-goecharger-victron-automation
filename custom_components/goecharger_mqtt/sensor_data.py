@@ -44,7 +44,12 @@ class SensorData():
         else:
             try:
                 if self.dataType == bool:
-                    self.state = True if curState.state == "on" else False
+                    if curState.state == "on":
+                        self.state = True
+                    elif curState.state == "off":
+                        self.state = False
+                    else:
+                        raise ValueError("Bool conversion failed")
                 else:
                     self.state = self.dataType(curState.state)
             except ValueError:

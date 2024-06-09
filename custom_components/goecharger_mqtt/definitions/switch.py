@@ -22,6 +22,7 @@ class GoEChargerSwitchEntityDescription(
     payload_on: str = "true"
     payload_off: str = "false"
     optimistic: bool = False
+    defaultValue: bool = None
 
 VICTRON_SWITCHES: tuple[GoEChargerSwitchEntityDescription, ...] = (
     GoEChargerSwitchEntityDescription(
@@ -31,7 +32,9 @@ VICTRON_SWITCHES: tuple[GoEChargerSwitchEntityDescription, ...] = (
         device_class=None,
         entity_registry_enabled_default=True,
         disabled=False,
+        optimistic=True,
         isVictron=True,
+        defaultValue = False
     ),
 )
 

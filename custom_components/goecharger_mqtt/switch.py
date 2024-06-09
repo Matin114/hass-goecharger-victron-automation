@@ -117,6 +117,10 @@ class VictronSwitch(GoEChargerEntity, SwitchEntity):
         self.entity_description = description
         self._optimistic = self.entity_description.optimistic
 
+        if description.defaultValue is not None:
+            self._attr_is_on = description.defaultValue
+            self.async_write_ha_state()
+
     @property
     def available(self):
         """Return True if entity is available."""
