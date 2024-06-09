@@ -105,7 +105,7 @@ class GoESurplusService():
         self.frcUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_frcUpdateTimer", dataType=int)
         self.psmUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_psmUpdateTimer", dataType=int)
         self.usedPhases = VictronSensorData(hass=hass, entityId="sensor.custom_usedPhases", stateMethod=stateUsedPhases, additionalData=usedPhasesAdditionalData)
-        self.maxBatteryDischargePower = VictronSensorData(hass=hass, entityId="number.custom_maxBatteryDischargePower", dataType=int)
+        self.maxBatteryDischargePower = VictronSensorData(hass=hass, entityId="number.custom_maxBatteryDischargePower", dataType=float)
         self.allowGridUsage = VictronSensorData(hass=hass, entityId="switch.custom_allowGridUsage", dataType=bool, defaultData=False)
 
         self.carChargePower = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_12", dataType=float)
@@ -341,7 +341,7 @@ class GoESurplusService():
                 # if it is not allowed to use the grid, decrease the targetChargingPower if needed
                 if not self.allowGridUsage.state:
                     # use the either targetCarChargePower directly or consider maxBatteryDischargePower
-                    targetCarChargePower = min(targetCarChargePower, self.carChargePower + self.maxBatteryDischargePower.state + self.batteryPower.state)
+                    targetCarChargePower = min(targetCarChargePower, self.carChargePower.state + self.maxBatteryDischargePower.state + self.batteryPower.state)
 
         elif self.chargePrio.state == 5: # use power from the grid to fast charge the car
             targetCarChargePower = availablePower + 27000
@@ -353,7 +353,7 @@ class GoESurplusService():
             # if it is not allowed to use the grid, decrease the targetChargingPower if needed
             if not self.allowGridUsage.state:
                 # use the either targetCarChargePower directly or consider maxBatteryDischargePower
-                targetCarChargePower = min(targetCarChargePower, self.carChargePower + self.maxBatteryDischargePower.state + self.batteryPower.state)
+                targetCarChargePower = min(targetCarChargePower, self.carChargePower.state + self.maxBatteryDischargePower.state + self.batteryPower.state)
         elif self.chargePrio.state == 7: # automatically update the partition used for charging the car based on a configured curve
             targetCarChargePower = availablePower * self.automaticLoadingPercentage
         elif self.chargePrio.state == 8: # charge car with a given amount of Wh
@@ -368,7 +368,7 @@ class GoESurplusService():
                 # if it is not allowed to use the grid, decrease the targetChargingPower if needed
                 if not self.allowGridUsage.state:
                     # use the either targetCarChargePower directly or consider maxBatteryDischargePower
-                    targetCarChargePower = min(targetCarChargePower, self.carChargePower + self.maxBatteryDischargePower.state + self.batteryPower.state)
+                    targetCarChargePower = min(targetCarChargePower, self.carChargePower.state + self.maxBatteryDischargePower.state + self.batteryPower.state)
 
         else: # either OFF or unknown chargePrio
             targetCarChargePower = 0
