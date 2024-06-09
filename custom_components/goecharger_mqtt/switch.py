@@ -6,7 +6,7 @@ from homeassistant.components import mqtt
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.core import callback
 
-from .definitions.switch import SWITCHES, GoEChargerSwitchEntityDescription
+from .definitions.switch import GOE_SWITCHES, VICTRON_SWITCHES, GoEChargerSwitchEntityDescription
 from .entity import GoEChargerEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,7 +20,12 @@ async def async_setup_entry(
     """Config entry setup."""
     async_add_entities(
         GoEChargerSwitch(config_entry, description)
-        for description in SWITCHES
+        for description in GOE_SWITCHES
+        if not description.disabled
+    )
+    async_add_entities(
+        VictronSwitch(config_entry, description)
+        for description in VICTRON_SWITCHES
         if not description.disabled
     )
 
@@ -95,3 +100,44 @@ class GoEChargerSwitch(GoEChargerEntity, SwitchEntity):
             self.async_write_ha_state()
 
         await mqtt.async_subscribe(self.hass, self._topic, message_received, 1)
+
+class VictronSwitch(GoEChargerEntity, SwitchEntity):
+    """Representation of a go-eCharger switch that is updated via MQTT."""
+
+    entity_description: GoEChargerSwitchEntityDescription
+
+    def __init__(
+        self,
+        config_entry: config_entries.ConfigEntry,
+        description: GoEChargerSwitchEntityDescription,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(config_entry, description)
+
+        self.entity_description = description
+        self._optimistic = self.entity_description.optimistic
+
+    @property
+    def available(self):
+        """Return True if entity is available."""
+        return self._topic is not None
+
+    @property
+    def assumed_state(self):
+        """Return true if we do optimistic updates."""
+        return self._optimistic
+
+    async def async_turn_on(self, **kwargs):
+        """Turn the switch on."""
+        if self._optimistic:
+            # Optimistically assume that switch has changed state.
+            self._attr_is_on = True
+            self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs):
+        """Turn the switch off."""
+        if self._optimistic:
+            # Optimistically assume that switch has changed state.
+            self._attr_is_on = False
+            self.async_write_ha_state()
+

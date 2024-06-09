@@ -199,6 +199,19 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
         native_step=1,
         isVictron=True
     ),
+    GoEChargerNumberEntityDescription(
+        key="maxBatteryDischargePower",
+        name="Maximal power for battery discharging",
+        entity_category=EntityCategory.CONFIG,
+        device_class=NumberDeviceClass.POWER,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        native_max_value=100000,
+        native_min_value=0,
+        native_step=100,
+        isVictron=True
+    ),
 )
 
 VICTRON_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (

@@ -23,8 +23,19 @@ class GoEChargerSwitchEntityDescription(
     payload_off: str = "false"
     optimistic: bool = False
 
+VICTRON_SWITCHES: tuple[GoEChargerSwitchEntityDescription, ...] = (
+    GoEChargerSwitchEntityDescription(
+        key="allowGridUsage",
+        name="Allow grid usage",
+        entity_category=EntityCategory.CONFIG,
+        device_class=None,
+        entity_registry_enabled_default=True,
+        disabled=False,
+        isVictron=True,
+    ),
+)
 
-SWITCHES: tuple[GoEChargerSwitchEntityDescription, ...] = (
+GOE_SWITCHES: tuple[GoEChargerSwitchEntityDescription, ...] = (
     GoEChargerSwitchEntityDescription(
         key="bac",
         name="Allow current change by button",

@@ -35,13 +35,15 @@ class GoESurplusService():
     colorIdle: GoESensorData # color of LEDs when idle (not charging, but not finished)
     frcUpdateTimer: VictronSensorData # a timer showing when frc will be updated
     psmUpdateTimer: VictronSensorData # a timer showing when psm will be updated
+    totalEnergy: GoESensorData # (Wh) total power ever charged with the wallbox
     # conditional
     maxBatteryChargePower: VictronSensorData # (W) maximal allowed power the battery may be charged with
     batterySocMin: VictronSensorData # (%) discharge battery to this soc in Prio 4
     manualCarChargePower: VictronSensorData # (W) targetCarChargePower will be set to this in Prio 6 & 8
     targetCarPowerAmount: VictronSensorData # (Wh) power amount that should be charged in prio 8
     targetCarPowerAmountFulfilled: VictronSensorData # (Wh) power already charged in prio 8
-    totalEnergy: GoESensorData # (Wh) total power ever charged with the wallbox
+    maxBatteryDischargePower: VictronSensorData # (W) maximal allowed power the battery may be discharged with
+    allowGridUsage: VictronSensorData # (bool) switch to allow or forbid grid usage for manual charging
 
     # ------------AUTOMATIC MODE----------
     automaticPercFrom0: VictronSensorData # (%) charge Percentage from 0 upwards 
@@ -103,6 +105,8 @@ class GoESurplusService():
         self.frcUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_frcUpdateTimer", dataType=int)
         self.psmUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_psmUpdateTimer", dataType=int)
         self.usedPhases = VictronSensorData(hass=hass, entityId="sensor.custom_usedPhases", stateMethod=stateUsedPhases, additionalData=usedPhasesAdditionalData)
+        self.maxBatteryDischargePower = VictronSensorData(hass=hass, entityId="number.custom_maxBatteryDischargePower", dataType=int)
+        self.allowGridUsage = VictronSensorData(hass=hass, entityId="switch.custom_allowGridUsage", dataType=bool)
 
         self.carChargePower = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_12", dataType=float)
         self.oldFrcVal = GoESensorData(hass=hass, entityId=f"select.go_echarger_{serialNumber}_frc", mqttTopic=f"{goeTopicPrefix}frc", dataType=int, stateMethod=stateFrc)
@@ -191,8 +195,12 @@ class GoESurplusService():
         elif self.chargePrio.state == 4:
             conditionalSensorList.append(self.batterySocMin)
             conditionalSensorList.append(self.manualCarChargePower)
+            conditionalSensorList.append(self.maxBatteryDischargePower)
+            conditionalSensorList.append(self.allowGridUsage)
         elif self.chargePrio.state == 6:
             conditionalSensorList.append(self.manualCarChargePower)
+            conditionalSensorList.append(self.maxBatteryDischargePower)
+            conditionalSensorList.append(self.allowGridUsage)
         elif self.chargePrio.state == 7: # automatic
             automaticPercRangeList = []
 
@@ -208,6 +216,8 @@ class GoESurplusService():
             conditionalSensorList.append(self.manualCarChargePower)
             conditionalSensorList.append(self.targetCarPowerAmount)
             conditionalSensorList.append(self.maxBatteryChargePower)
+            conditionalSensorList.append(self.maxBatteryDischargePower)
+            conditionalSensorList.append(self.allowGridUsage)
 
         for sensor in conditionalSensorList:
             sensor.retrieveData()
@@ -323,11 +333,15 @@ class GoESurplusService():
         elif self.chargePrio.state == 4: # discharge battery until SOC is below the configured confSOCMin
             # check if batterySocMin was already reached 
             if self.batterySoc.state <= self.batterySocMin.state:
-                targetCarChargePower = 0
-                self.instantUpdatePower = True
+                targetCarChargePower = availablePower
             else:
                 # otherwise charge with eihter configured power or availablePower, considering which is bigger
                 targetCarChargePower = max(self.manualCarChargePower.state, availablePower)
+                
+                # if it is not allowed to use the grid, decrease the targetChargingPower if needed
+                if not self.allowGridUsage.state:
+                    # use the either targetCarChargePower directly or consider maxBatteryDischargePower
+                    targetCarChargePower = min(targetCarChargePower, self.carChargePower + self.maxBatteryDischargePower.state + self.batteryPower.state)
 
         elif self.chargePrio.state == 5: # use power from the grid to fast charge the car
             targetCarChargePower = availablePower + 27000
@@ -335,6 +349,11 @@ class GoESurplusService():
         elif self.chargePrio.state == 6: # charge with the configured power from manualCarChargePower
             targetCarChargePower = self.manualCarChargePower.state
             self.instantUpdatePower = True
+            
+            # if it is not allowed to use the grid, decrease the targetChargingPower if needed
+            if not self.allowGridUsage.state:
+                # use the either targetCarChargePower directly or consider maxBatteryDischargePower
+                targetCarChargePower = min(targetCarChargePower, self.carChargePower + self.maxBatteryDischargePower.state + self.batteryPower.state)
         elif self.chargePrio.state == 7: # automatically update the partition used for charging the car based on a configured curve
             targetCarChargePower = availablePower * self.automaticLoadingPercentage
         elif self.chargePrio.state == 8: # charge car with a given amount of Wh
@@ -346,7 +365,10 @@ class GoESurplusService():
                 # otherwise charge with either configured power or availablePower - maxBatteryChargePower, considering which is bigger
                 targetCarChargePower = max(self.manualCarChargePower.state, availablePower - self.maxBatteryChargePower.state)
 
-            
+                # if it is not allowed to use the grid, decrease the targetChargingPower if needed
+                if not self.allowGridUsage.state:
+                    # use the either targetCarChargePower directly or consider maxBatteryDischargePower
+                    targetCarChargePower = min(targetCarChargePower, self.carChargePower + self.maxBatteryDischargePower.state + self.batteryPower.state)
 
         else: # either OFF or unknown chargePrio
             targetCarChargePower = 0
