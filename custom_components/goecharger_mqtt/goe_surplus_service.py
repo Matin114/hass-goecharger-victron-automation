@@ -85,11 +85,11 @@ class GoESurplusService():
                                     GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_8", dataType=float),
                                     GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_9", dataType=float)]}
 
-        self.chargePrio = VictronSensorData(hass=hass, entityId="select.custom_chargeprio", dataType=int, defaultData=-1, stateMethod=stateChargePrio)
-        self.globalGrid = VictronSensorData(hass=hass, entityId="sensor.custom_globalGrid", dataType=float)
-        self.batteryPower = VictronSensorData(hass=hass, entityId="sensor.custom_batteryPower", dataType=float)
-        self.batterySoc = VictronSensorData(hass=hass, entityId="sensor.custom_batterySOC", dataType=float)
-        self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarChargePower", dataType=float, defaultData=1)
+        self.chargePrio = VictronSensorData(hass=hass, entityId=f"select.go_echarger_{serialNumber}_chargeprio", dataType=int, defaultData=-1, stateMethod=stateChargePrio)
+        self.globalGrid = VictronSensorData(hass=hass, entityId="sensor.go_echarger_global_globalGrid", dataType=float)
+        self.batteryPower = VictronSensorData(hass=hass, entityId="sensor.go_echarger_global_batteryPower", dataType=float)
+        self.batterySoc = VictronSensorData(hass=hass, entityId="sensor.go_echarger_global_batterySOC", dataType=float)
+        self.oldTargetCarChargePower = VictronSensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_targetCarChargePower", dataType=float, defaultData=1)
         self.oldAmpVal = GoESensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_amp", mqttTopic=f"{goeTopicPrefix}amp", dataType=int, defaultData=0)
         self.ledBrightness = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_lbr", mqttTopic=f"{goeTopicPrefix}lbr", dataType=int, defaultData=0)
         self.colorCharging = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_cch", mqttTopic=f"{goeTopicPrefix}cch", defaultData=65793)
@@ -97,16 +97,16 @@ class GoESurplusService():
         self.carConnected = GoESensorData(hass=hass, entityId=f"binary_sensor.go_echarger_{serialNumber}_car", dataType=bool)
 
         # TODO calculate maxBatteryChargePower interally
-        self.maxBatteryChargePower = VictronSensorData(hass=hass, entityId="sensor.custom_maxBatteryChargePower", dataType=float, defaultData=25000)
-        self.targetCarPowerAmount = VictronSensorData(hass=hass, entityId="number.custom_targetCarPowerAmount", dataType=float)
-        self.batterySocMin = VictronSensorData(hass=hass, entityId="number.custom_batterySOCMin", dataType=float)
-        self.manualCarChargePower = VictronSensorData(hass=hass, entityId="number.custom_manualCarChargePower", dataType=float)
-        self.targetCarPowerAmountFulfilled = VictronSensorData(hass=hass, entityId="sensor.custom_targetCarPowerAmountFulfilled", dataType=float, defaultData=0)
-        self.frcUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_frcUpdateTimer", dataType=int)
-        self.psmUpdateTimer = VictronSensorData(hass=hass, entityId="sensor.custom_psmUpdateTimer", dataType=int)
-        self.usedPhases = VictronSensorData(hass=hass, entityId="sensor.custom_usedPhases", stateMethod=stateUsedPhases, additionalData=usedPhasesAdditionalData)
-        self.maxBatteryDischargePower = VictronSensorData(hass=hass, entityId="number.custom_maxBatteryDischargePower", dataType=float)
-        self.allowGridUsage = VictronSensorData(hass=hass, entityId="switch.custom_allowGridUsage", dataType=bool, defaultData=False)
+        self.maxBatteryChargePower = VictronSensorData(hass=hass, entityId="sensor.go_echarger_global_maxBatteryChargePower", dataType=float, defaultData=25000)
+        self.targetCarPowerAmount = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_targetCarPowerAmount", dataType=float)
+        self.batterySocMin = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_batterySOCMin", dataType=float)
+        self.manualCarChargePower = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_manualCarChargePower", dataType=float)
+        self.targetCarPowerAmountFulfilled = VictronSensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_targetCarPowerAmountFulfilled", dataType=float, defaultData=0)
+        self.frcUpdateTimer = VictronSensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_frcUpdateTimer", dataType=int)
+        self.psmUpdateTimer = VictronSensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_psmUpdateTimer", dataType=int)
+        self.usedPhases = VictronSensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_usedPhases", stateMethod=stateUsedPhases, additionalData=usedPhasesAdditionalData)
+        self.maxBatteryDischargePower = VictronSensorData(hass=hass, entityId="number.go_echarger_global_maxBatteryDischargePower", dataType=float)
+        self.allowGridUsage = VictronSensorData(hass=hass, entityId=f"switch.go_echarger_{serialNumber}_allowGridUsage", dataType=bool, defaultData=False)
 
         self.carChargePower = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_nrg_12", dataType=float)
         self.oldFrcVal = GoESensorData(hass=hass, entityId=f"select.go_echarger_{serialNumber}_frc", mqttTopic=f"{goeTopicPrefix}frc", dataType=int, stateMethod=stateFrc)
@@ -114,17 +114,17 @@ class GoESurplusService():
         self.totalEnergy = GoESensorData(hass=hass, entityId=f"sensor.go_echarger_{serialNumber}_eto", dataType=float)
         
 
-        self.automaticPercFrom0 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage0_10", dataType=float)
-        self.automaticPercFrom10 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage10_20", dataType=float)
-        self.automaticPercFrom20 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage20_30", dataType=float)
-        self.automaticPercFrom30 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage30_40", dataType=float)
-        self.automaticPercFrom40 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage40_50", dataType=float)
-        self.automaticPercFrom50 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage50_60", dataType=float)
-        self.automaticPercFrom60 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage60_70", dataType=float)
-        self.automaticPercFrom70 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage70_80", dataType=float)
-        self.automaticPercFrom80 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage80_90", dataType=float)
-        self.automaticPercFrom90 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage90_100", dataType=float)
-        self.automaticPerc100 = VictronSensorData(hass=hass, entityId="number.custom_automaticpercentage100", dataType=float)
+        self.automaticPercFrom0 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage0_10", dataType=float)
+        self.automaticPercFrom10 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage10_20", dataType=float)
+        self.automaticPercFrom20 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage20_30", dataType=float)
+        self.automaticPercFrom30 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage30_40", dataType=float)
+        self.automaticPercFrom40 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage40_50", dataType=float)
+        self.automaticPercFrom50 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage50_60", dataType=float)
+        self.automaticPercFrom60 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage60_70", dataType=float)
+        self.automaticPercFrom70 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage70_80", dataType=float)
+        self.automaticPercFrom80 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage80_90", dataType=float)
+        self.automaticPercFrom90 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage90_100", dataType=float)
+        self.automaticPerc100 = VictronSensorData(hass=hass, entityId=f"number.go_echarger_{serialNumber}_automaticpercentage100", dataType=float)
         self.allAutomaticPercRangeList = [self.automaticPercFrom0, self.automaticPercFrom10, self.automaticPercFrom20, self.automaticPercFrom30, self.automaticPercFrom40, 
                                 self.automaticPercFrom50, self.automaticPercFrom60, self.automaticPercFrom70, self.automaticPercFrom80, self.automaticPercFrom90, self.automaticPerc100]
 

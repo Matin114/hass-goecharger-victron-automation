@@ -1,6 +1,6 @@
 [
     {
-        "id": "c3a9d22d8eb9f042",
+        "id": "54917eaf3c88fb80",
         "type": "tab",
         "label": "Test",
         "disabled": false,
@@ -8,11 +8,11 @@
         "env": []
     },
     {
-        "id": "1c7e2b4deeb715ab",
+        "id": "0ff1cac61372022f",
         "type": "mqtt out",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
-        "topic": "custom/globalGrid",
+        "topic": "go-eCharger/global/globalGrid",
         "qos": "0",
         "retain": "",
         "respTopic": "",
@@ -21,16 +21,16 @@
         "correl": "",
         "expiry": "",
         "broker": "ca7519162ed1641c",
-        "x": 1250,
+        "x": 1290,
         "y": 500,
         "wires": []
     },
     {
-        "id": "6ab671a098183eaf",
+        "id": "50594aecde1e4d96",
         "type": "mqtt out",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
-        "topic": "custom/batterySOC",
+        "topic": "go-eCharger/global/batterySOC",
         "qos": "0",
         "retain": "",
         "respTopic": "",
@@ -39,16 +39,16 @@
         "correl": "",
         "expiry": "",
         "broker": "ca7519162ed1641c",
-        "x": 1250,
+        "x": 1290,
         "y": 400,
         "wires": []
     },
     {
-        "id": "dbcd5523041f0814",
+        "id": "cdf02fa94f831931",
         "type": "mqtt out",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
-        "topic": "custom/batteryCurrent",
+        "topic": "go-eCharger/global/batteryPower",
         "qos": "0",
         "retain": "",
         "respTopic": "",
@@ -57,50 +57,14 @@
         "correl": "",
         "expiry": "",
         "broker": "ca7519162ed1641c",
-        "x": 1260,
-        "y": 360,
+        "x": 1300,
+        "y": 340,
         "wires": []
     },
     {
-        "id": "45b9cfd7621a6405",
-        "type": "mqtt out",
-        "z": "c3a9d22d8eb9f042",
-        "name": "",
-        "topic": "custom/batteryVoltage",
-        "qos": "0",
-        "retain": "",
-        "respTopic": "",
-        "contentType": "",
-        "userProps": "",
-        "correl": "",
-        "expiry": "",
-        "broker": "ca7519162ed1641c",
-        "x": 1260,
-        "y": 320,
-        "wires": []
-    },
-    {
-        "id": "bb252894df02db3b",
-        "type": "mqtt out",
-        "z": "c3a9d22d8eb9f042",
-        "name": "",
-        "topic": "custom/batteryPower",
-        "qos": "0",
-        "retain": "",
-        "respTopic": "",
-        "contentType": "",
-        "userProps": "",
-        "correl": "",
-        "expiry": "",
-        "broker": "ca7519162ed1641c",
-        "x": 1260,
-        "y": 280,
-        "wires": []
-    },
-    {
-        "id": "61ee75ab8c55d069",
+        "id": "005b1fb039e5ae27",
         "type": "victron-input-battery",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "service": "com.victronenergy.battery/279",
         "path": "/Soc",
         "serviceObj": {
@@ -119,14 +83,14 @@
         "y": 400,
         "wires": [
             [
-                "867d4f268cbb66b9"
+                "226324743ddb9004"
             ]
         ]
     },
     {
-        "id": "17cbcf4b97f87fa0",
+        "id": "9bb3efb43f2bbee7",
         "type": "victron-input-system",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "service": "com.victronenergy.system/0",
         "path": "/Ac/Grid/L1/Power",
         "serviceObj": {
@@ -145,14 +109,14 @@
         "y": 460,
         "wires": [
             [
-                "529877defffb8ffc"
+                "ce08763c44098be6"
             ]
         ]
     },
     {
-        "id": "a3e10f99b7bd1bcd",
+        "id": "cb1082636b03f7e6",
         "type": "victron-input-system",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "service": "com.victronenergy.system/0",
         "path": "/Ac/Grid/L2/Power",
         "serviceObj": {
@@ -171,14 +135,14 @@
         "y": 500,
         "wires": [
             [
-                "9dae24eb8955b6ec"
+                "17d0e2dc787d7de9"
             ]
         ]
     },
     {
-        "id": "fb34c0b9a1015820",
+        "id": "414c3c2c745ad2bb",
         "type": "victron-input-system",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "service": "com.victronenergy.system/0",
         "path": "/Ac/Grid/L3/Power",
         "serviceObj": {
@@ -197,14 +161,14 @@
         "y": 540,
         "wires": [
             [
-                "bca23e0443a153e5"
+                "f879263b7e87ebad"
             ]
         ]
     },
     {
-        "id": "529877defffb8ffc",
+        "id": "ce08763c44098be6",
         "type": "change",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
         "rules": [
             {
@@ -224,14 +188,14 @@
         "y": 460,
         "wires": [
             [
-                "a5ab7f72bdd9c305"
+                "4c76d00c59b52df2"
             ]
         ]
     },
     {
-        "id": "9dae24eb8955b6ec",
+        "id": "17d0e2dc787d7de9",
         "type": "change",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
         "rules": [
             {
@@ -251,14 +215,14 @@
         "y": 500,
         "wires": [
             [
-                "a5ab7f72bdd9c305"
+                "4c76d00c59b52df2"
             ]
         ]
     },
     {
-        "id": "bca23e0443a153e5",
+        "id": "f879263b7e87ebad",
         "type": "change",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
         "rules": [
             {
@@ -278,14 +242,14 @@
         "y": 540,
         "wires": [
             [
-                "a5ab7f72bdd9c305"
+                "4c76d00c59b52df2"
             ]
         ]
     },
     {
-        "id": "a5ab7f72bdd9c305",
+        "id": "4c76d00c59b52df2",
         "type": "join",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
         "mode": "custom",
         "build": "object",
@@ -306,14 +270,14 @@
         "y": 500,
         "wires": [
             [
-                "efba86992ccd736b"
+                "4ffd44fd20170ad3"
             ]
         ]
     },
     {
-        "id": "efba86992ccd736b",
+        "id": "4ffd44fd20170ad3",
         "type": "function",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "Grid",
         "func": "//Eingänge einlesen\nvar Temp1 =msg.payload['GridL1'];\nvar Temp2 =msg.payload['GridL2'];\nvar Temp3 =msg.payload['GridL3'];\n\n//Ergebniss berechnen\nvar Temp=Temp1+Temp2+Temp3;\nTemp=Math.round(Temp);\n\n//Global ausgeben\nglobal.set(\"GlobalGrid\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
         "outputs": 1,
@@ -325,17 +289,18 @@
         "y": 500,
         "wires": [
             [
-                "1c7e2b4deeb715ab"
+                "0ff1cac61372022f"
             ]
         ]
     },
     {
-        "id": "867d4f268cbb66b9",
+        "id": "226324743ddb9004",
         "type": "function",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "SOC",
         "func": "//Eingänge einlesen\nvar Temp1 =msg.payload;\n\n//Ergebniss berechnen\nvar Temp=Temp1;\nTemp=Math.round(Temp*10)/10;\n\n//Global ausgeben\nglobal.set(\"GlobalSOC\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
@@ -344,14 +309,14 @@
         "y": 400,
         "wires": [
             [
-                "6ab671a098183eaf"
+                "50594aecde1e4d96"
             ]
         ]
     },
     {
-        "id": "aec8e84c59c679c5",
+        "id": "b75055e802716ad9",
         "type": "victron-input-battery",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "service": "com.victronenergy.battery/279",
         "path": "/Dc/0/Voltage",
         "serviceObj": {
@@ -370,14 +335,14 @@
         "y": 320,
         "wires": [
             [
-                "e25d04ec2b938241"
+                "8291511fbb3d88b4"
             ]
         ]
     },
     {
-        "id": "e25d04ec2b938241",
+        "id": "8291511fbb3d88b4",
         "type": "change",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
         "rules": [
             {
@@ -397,53 +362,34 @@
         "y": 320,
         "wires": [
             [
-                "d526545923d1eb0d",
-                "442d3d2e61249c67"
+                "e7c5dd216d143927"
             ]
         ]
     },
     {
-        "id": "d526545923d1eb0d",
+        "id": "c63fd557444cd9a5",
         "type": "function",
-        "z": "c3a9d22d8eb9f042",
-        "name": "VDC",
-        "func": "//Eingänge einlesen\nvar Temp1 =msg.payload;\n\n//Ergebniss berechnen\nvar Temp=Temp1;\n//Temp=Math.round(Temp);\n\n//Global ausgeben\nglobal.set(\"GlobalVDC\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1070,
-        "y": 320,
-        "wires": [
-            [
-                "45b9cfd7621a6405"
-            ]
-        ]
-    },
-    {
-        "id": "ef11781a7f894da2",
-        "type": "function",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "WDC",
         "func": "//Eingänge einlesen\nvar Temp1 =msg.payload['VDC'];\nvar Temp2 =msg.payload['ADC'];\n\n//Ergebniss berechnen\nvar Temp=Temp1*Temp2;\nTemp=Math.round(Temp);\n\n//Global ausgeben\nglobal.set(\"GlobalWDC\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
         "outputs": 1,
+        "timeout": "",
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
         "x": 1070,
-        "y": 280,
+        "y": 340,
         "wires": [
             [
-                "bb252894df02db3b"
+                "cdf02fa94f831931"
             ]
         ]
     },
     {
-        "id": "442d3d2e61249c67",
+        "id": "e7c5dd216d143927",
         "type": "join",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
         "mode": "custom",
         "build": "object",
@@ -461,17 +407,17 @@
         "reduceInitType": "",
         "reduceFixup": "",
         "x": 950,
-        "y": 280,
+        "y": 340,
         "wires": [
             [
-                "ef11781a7f894da2"
+                "c63fd557444cd9a5"
             ]
         ]
     },
     {
-        "id": "30c9282f34e12deb",
+        "id": "a8055b388e0cf3d4",
         "type": "victron-input-battery",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "service": "com.victronenergy.battery/279",
         "path": "/Dc/0/Current",
         "serviceObj": {
@@ -490,14 +436,14 @@
         "y": 360,
         "wires": [
             [
-                "866c7710285fb3f4"
+                "b46b1daf8e7e97d6"
             ]
         ]
     },
     {
-        "id": "866c7710285fb3f4",
+        "id": "b46b1daf8e7e97d6",
         "type": "change",
-        "z": "c3a9d22d8eb9f042",
+        "z": "54917eaf3c88fb80",
         "name": "",
         "rules": [
             {
@@ -517,27 +463,7 @@
         "y": 360,
         "wires": [
             [
-                "442d3d2e61249c67",
-                "22c6285f84cbdb65"
-            ]
-        ]
-    },
-    {
-        "id": "22c6285f84cbdb65",
-        "type": "function",
-        "z": "c3a9d22d8eb9f042",
-        "name": "ADC",
-        "func": "//Eingänge einlesen\nvar Temp1 =msg.payload;\n\n//Ergebniss berechnen\nvar Temp=Temp1;\n//Temp=Math.round(Temp);\n\n//Global ausgeben\nglobal.set(\"GlobalADC\",Temp);\n\n//Lokal ausgeben\nmsg.payload=Temp;\nreturn msg;",
-        "outputs": 1,
-        "noerr": 0,
-        "initialize": "",
-        "finalize": "",
-        "libs": [],
-        "x": 1070,
-        "y": 360,
-        "wires": [
-            [
-                "dbcd5523041f0814"
+                "e7c5dd216d143927"
             ]
         ]
     },

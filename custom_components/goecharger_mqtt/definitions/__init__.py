@@ -119,3 +119,4 @@ class GoEChargerEntityDescription(EntityDescription):
     disabled: bool | None = None
     disabled_reason: str | None = None
     isVictron: bool = False
+    isGlobal: bool = False

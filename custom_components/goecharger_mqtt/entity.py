@@ -9,7 +9,6 @@ from .const import (
     DEVICE_INFO_MANUFACTURER,
     DEVICE_INFO_MODEL,
     DOMAIN,
-    DEFAULT_VICTRON_TOPIC_PREFIX,
 )
 from .definitions import GoEChargerEntityDescription
 
@@ -25,11 +24,11 @@ class GoEChargerEntity(Entity):
         """Initialize the sensor."""
         serial_number = config_entry.data[CONF_SERIAL_NUMBER]
 
-        if description.isVictron:            
-            topic_prefix = DEFAULT_VICTRON_TOPIC_PREFIX
-            self._topic = f"{topic_prefix}/{description.key}"
+        topic_prefix = config_entry.data[CONF_GOE_TOPIC_PREFIX]
+        if description.isGlobal:
+            # global sensor are only needed once even for multiple chargers, therefore have a hard entityId
+            self._topic = f"{topic_prefix}/global/{description.key}"
         else:
-            topic_prefix = config_entry.data[CONF_GOE_TOPIC_PREFIX]
             self._topic = f"{topic_prefix}/{serial_number}/{description.key}"
 
         slug = slugify(self._topic.replace("/", "_"))

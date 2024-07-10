@@ -185,6 +185,7 @@ VICTRON_SENSORS_MQTT: tuple[GoEChargerSensorEntityDescription, ...] = (
         entity_registry_enabled_default=True,
         disabled=False,
         isVictron=True,
+        isGlobal=True,
     ),
     GoEChargerSensorEntityDescription(
         key="batteryPower",
@@ -196,30 +197,7 @@ VICTRON_SENSORS_MQTT: tuple[GoEChargerSensorEntityDescription, ...] = (
         entity_registry_enabled_default=True,
         disabled=False,
         isVictron=True,
-    ),
-    GoEChargerSensorEntityDescription(
-        key="batteryVoltage",
-        name="Battery charging voltage",
-        state=roundThreeDecimals,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        device_class=SensorDeviceClass.VOLTAGE,
-        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=True,
-        disabled=False,
-        isVictron=True,
-    ),
-    GoEChargerSensorEntityDescription(
-        key="batteryCurrent",
-        name="Battery charging current",
-        state=roundTwoDecimals,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        device_class=SensorDeviceClass.CURRENT,
-        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
-        state_class=SensorStateClass.MEASUREMENT,
-        entity_registry_enabled_default=True,
-        disabled=False,
-        isVictron=True,
+        isGlobal=True,
     ),
     GoEChargerSensorEntityDescription(
         key="batterySOC",
@@ -231,6 +209,7 @@ VICTRON_SENSORS_MQTT: tuple[GoEChargerSensorEntityDescription, ...] = (
         entity_registry_enabled_default=True,
         disabled=False,
         isVictron=True,
+        isGlobal=True,
     ),
     GoEChargerSensorEntityDescription(
         key="maxBatteryChargePower",
@@ -242,6 +221,7 @@ VICTRON_SENSORS_MQTT: tuple[GoEChargerSensorEntityDescription, ...] = (
         entity_registry_enabled_default=True,
         disabled=False,
         isVictron=True,
+        isGlobal=True,
     ),
 )
 

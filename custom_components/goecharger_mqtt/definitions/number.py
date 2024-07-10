@@ -210,7 +210,8 @@ VICTRON_RESTORE_NUMBERS: tuple[GoEChargerNumberEntityDescription, ...] = (
         native_max_value=100000,
         native_min_value=0,
         native_step=100,
-        isVictron=True
+        isVictron=True,
+        isGlobal=True,
     ),
 )
 
